@@ -130,8 +130,9 @@ public:
     void LoadState(std::istream& stream);
 
     // sam
+    typedef void (*GG_Instruction_Started_Callback)(void* context, uint16_t pc, u8 opcode);
     typedef void (*HuC6280_IRQ_Callback)(void* context, uint16_t vector, uint16_t interruptedPC, uint16_t routineAddr);
-    void SetIRQCallback(HuC6280_IRQ_Callback callback, void* context);
+    void SetCallbacks(HuC6280_IRQ_Callback irqCallback, GG_Instruction_Started_Callback instructionStartedCallback, void* context);
 private:
     typedef void (HuC6280::*opcodeptr) (void);
     opcodeptr m_opcodes[256];
@@ -173,8 +174,9 @@ private:
     int m_reset_value;
 
     // sam
+    void* m_callback_context;
     HuC6280_IRQ_Callback m_irq_callback;
-    void* m_irq_callback_context;
+    GG_Instruction_Started_Callback m_instruction_started_callback;
 
 private:
 

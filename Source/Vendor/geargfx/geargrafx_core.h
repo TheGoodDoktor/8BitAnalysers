@@ -103,8 +103,6 @@ public:
     void SetDebugCallback(GG_Debug_Callback callback);
     // sam. added this.
     void SetInstructionExecutedCallback(GG_Instruction_Executed_Callback callback, void* context);
-    // sam. added this.
-    void SetIRQCallback(GG_IRQ_Callback callback, void* context);
 
 private:
     void Reset();

@@ -1214,6 +1214,7 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 
 uint16_t g_DbgReadAddress = 0xddf8;
 
+// sam. We are not using this function for PCE. We have our own version in PCEEmu.cpp
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 {
 	if (dataAddr == g_DbgReadAddress)
@@ -1240,6 +1241,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 	}
 }
 
+// sam. We are not using this function for PCE. We have our own version in PCEEmu.cpp
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
 	const FAddressRef pcAddr = state.GetCanonicalAddressRef(pc);

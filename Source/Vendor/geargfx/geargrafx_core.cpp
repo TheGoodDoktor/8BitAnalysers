@@ -178,12 +178,6 @@ void GeargrafxCore::SetInstructionExecutedCallback(GG_Instruction_Executed_Callb
    m_callback_context = context;
 }
 
-// sam
-void GeargrafxCore::SetIRQCallback(GG_IRQ_Callback callback, void* context)
-{
-    m_huc6280->SetIRQCallback(callback, context);
-}
-
 void GeargrafxCore::KeyPressed(GG_Controllers controller, GG_Keys key)
 {
     m_input->KeyPressed(controller, key);

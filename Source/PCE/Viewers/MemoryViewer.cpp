@@ -55,8 +55,44 @@ void FMemoryViewer::BuildMemoryList()
 	}
 }
 
+#include "../RecentMemoryAccess.h"
+#include "CodeAnalyser/UI/CodeAnalyserUI.h"
+
 void FMemoryViewer::DrawUI()
 {
+	// TEMP BEGIN
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+	const int count = pPCEEmu->GetRecentMemAccess()->GetCount();
+	for (int i = 0; i < count; i++)
+	{
+		if (const FMemoryAccessItem* pAccess = pPCEEmu->GetRecentMemAccess()->GetItem(i))
+		{
+			const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
+			std::string type = pAccess->Type == EMemoryAccessType::Read ? "R" : pAccess->Type == EMemoryAccessType::Write ? "W" : "?";
+			ImGui::Text("%s %s %s %d bytes", type.c_str(), pBank ? pBank->Name.c_str() : "None", NumStr(pAccess->GetStartAddress()), pAccess->NumBytes);
+			DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+
+			if (i == pPCEEmu->GetRecentMemAccess()->GetLastReadIndex())
+			{
+				ImGui::SameLine();
+				ImGui::Text(" <- Last Read");
+			}
+			if (i == pPCEEmu->GetRecentMemAccess()->GetLastWriteIndex())
+			{
+				ImGui::SameLine();
+				ImGui::Text(" <- Last Write");
+			}
+			if (i == pPCEEmu->GetRecentMemAccess()->GetCurIndex())
+			{
+				ImGui::SameLine();
+				ImGui::Text(" <- Current");
+			}
+		}
+	}
+	// TEMP END
+
+	ImGui::Separator();
+
 	BuildMemoryList();
 
 	if (Regions.empty())

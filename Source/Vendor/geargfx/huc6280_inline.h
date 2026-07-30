@@ -40,6 +40,10 @@ INLINE u32 HuC6280::RunInstruction(bool* instruction_completed)
     m_cycles = 0;
 
     u8 opcode = Fetch8();
+    
+    // sam. Trigger callback for the instruction starting.
+    m_instruction_started_callback(m_callback_context, m_PC.GetValue(), opcode); 
+
     CheckIRQs();
     (this->*m_opcodes[opcode])();
 
@@ -88,7 +92,7 @@ inline void HuC6280::HandleIRQ()
 
     // sam
     if (m_irq_callback)
-        m_irq_callback(m_irq_callback_context, vector, pc, m_PC.GetValue());
+        m_irq_callback(m_callback_context, vector, pc, m_PC.GetValue());
 
     m_cycles += 8;
 
