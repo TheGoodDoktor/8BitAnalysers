@@ -19,6 +19,7 @@
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
 #include "Viewers/CDROMViewer.h"
+#include "Viewers/RecentMemoryAccessViewer.h"
 #include "VRAMAnalyser.h"
 #include "CDROMAnalyser.h"
 #include "RecentMemoryAccess.h"
@@ -1298,6 +1299,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(new FMemoryViewer(this));
 	AddViewer(new FZeroPageViewer(this));
 	AddViewer(new FPCEGraphicsViewer(this));
+	AddViewer(new FRecentMemoryAccessViewer(this));
 #if CDROM_SUPPORT
 	pCDROMViewer = new FCDROMViewer(this);
 	AddViewer(pCDROMViewer);

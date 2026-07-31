@@ -24,6 +24,7 @@ struct FMemoryAccessBuf
 	int CurIndex = 0;		// Buffer write index
 
 	int LastIndex = -1;
+	bool bTrackStack = false;
 };
 
 class FRecentMemoryAccess
@@ -32,6 +33,7 @@ public:
 	FRecentMemoryAccess();
 
 	void Reset();
+	void SetStackTracking(bool bEnable) { Reads.bTrackStack = bEnable; Writes.bTrackStack = bEnable; }
 
 	//void SetEnabled(bool bEnabled);
 
@@ -40,5 +42,6 @@ public:
 
 private:
 	//bool bEnabled = false;
+	bool bTrackStack = false;
 };
 

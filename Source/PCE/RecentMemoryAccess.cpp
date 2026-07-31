@@ -40,6 +40,11 @@ void FMemoryAccessBuf::RegisterAccess(FAddressRef addr)
 {
 	//if (!bEnabled)
 	//	return;
+	const uint16_t physAddr = addr.GetAddress();
+	if (!bTrackStack && (physAddr >= 0x2100 && physAddr <= 0x21ff))
+	{
+		return;
+	}
 
 	if (LastIndex != -1)
 	{
@@ -47,11 +52,14 @@ void FMemoryAccessBuf::RegisterAccess(FAddressRef addr)
 		if (lastAccess.IsValid())
 		{
 			// Is this a repeated access of >1 bytes?
-			if (lastAccess.GetBankId() == addr.GetBankId() && lastAccess.GetAddress() == (addr.GetAddress() - 1))
+			if (lastAccess.GetBankId() == addr.GetBankId())
 			{
-				MemoryAccess[LastIndex].Addr = addr;
-				MemoryAccess[LastIndex].NumBytes++;
-				return;
+				if (abs(lastAccess.GetAddress() - addr.GetAddress()) == 1)
+				{
+					MemoryAccess[LastIndex].Addr = addr;
+					MemoryAccess[LastIndex].NumBytes++;
+					return;
+				}
 			}
 		}
 	}
