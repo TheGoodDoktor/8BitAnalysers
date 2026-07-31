@@ -1,72 +1,19 @@
 #include "RecentMemoryAccess.h"
-#include "PCEEmu.h"
 
-FRecentMemoryAccess::FRecentMemoryAccess(FPCEEmu* pEmu)
-	: pPCEEmu(pEmu)
+FRecentMemoryAccess::FRecentMemoryAccess()
 {
-	Reset();
+	Reads.Reset();
+	Writes.Reset();
 }
 
 void FRecentMemoryAccess::Reset()
 {
-	Count = 0;
-	CurIndex = 0;
-
-	FAddressRef LastAccess = FAddressRef::Invalid();
-
-	for (int i = 0; i < kMaxCount; i++)
-	{
-		MemoryAccess[i].Addr = FAddressRef::Invalid();
-		MemoryAccess[i].NumBytes = 0;
-		MemoryAccess[i].Type = EMemoryAccessType::None;
-	}
-}
-
-void FRecentMemoryAccess::ClearUsage()
-{
-}
-
-void FRecentMemoryAccess::RegisterAccess(EMemoryAccessType type, FAddressRef addr)
-{
-	assert(type != EMemoryAccessType::None);
-	if (!bEnabled)
-		return;
-
-	int& lastIndex = type == EMemoryAccessType::Read ? LastReadIndex : LastWriteIndex;
-	const FAddressRef& lastAccess = MemoryAccess[lastIndex].Addr;
-	if (lastAccess.IsValid())
-	{
-		// todo: deal with crossing bank boundaries?
-		
-		// Is this a repeated access of >1 bytes?
-		if (lastAccess.GetBankId() == addr.GetBankId() && lastAccess.GetAddress() == (addr.GetAddress() - 1))
-		{
-			MemoryAccess[lastIndex].Addr = addr;
-			MemoryAccess[lastIndex].NumBytes++;
-			return;
-		}
-	}
-
-	int index = CurIndex;
-	if (Count < kMaxCount)
-	{
-		index = Count;
-		Count++;
-	}
-
-	MemoryAccess[index].Addr = addr;
-	MemoryAccess[index].Type = type;
-	MemoryAccess[index].NumBytes = 1;
-
-	lastIndex = CurIndex;
-
-	CurIndex++;
-	if (CurIndex == kMaxCount)
-		CurIndex = 0;
+	Reads.Reset();
+	Writes.Reset();
 }
 
 // todo: remove this? not sure we need it
-void FRecentMemoryAccess::SetEnabled(bool bEnable)
+/*void FRecentMemoryAccess::SetEnabled(bool bEnable)
 {
 	if (bEnabled)
 	{
@@ -75,21 +22,67 @@ void FRecentMemoryAccess::SetEnabled(bool bEnable)
 	{
 	}
 	bEnabled = bEnable;
+}*/
+
+void FMemoryAccessBuf::Reset()
+{
+	Count = 0;
+	CurIndex = 0;
+
+	for (int i = 0; i < kMaxMemAccessCount; i++)
+	{
+		MemoryAccess[i].Addr = FAddressRef::Invalid();
+		MemoryAccess[i].NumBytes = 0;
+	}
 }
 
-const FMemoryAccessItem* FRecentMemoryAccess::GetItem(int index) const
+void FMemoryAccessBuf::RegisterAccess(FAddressRef addr)
 {
-	if (index < kMaxCount)
+	//if (!bEnabled)
+	//	return;
+
+	if (LastIndex != -1)
 	{
-		if (index < Count)
+		const FAddressRef& lastAccess = MemoryAccess[LastIndex].Addr;
+		if (lastAccess.IsValid())
 		{
-			return &MemoryAccess[index];
-		}
-		else
-		{
-			int retIndex = (CurIndex + index) % kMaxCount;
-			return &MemoryAccess[retIndex];
+			// Is this a repeated access of >1 bytes?
+			if (lastAccess.GetBankId() == addr.GetBankId() && lastAccess.GetAddress() == (addr.GetAddress() - 1))
+			{
+				MemoryAccess[LastIndex].Addr = addr;
+				MemoryAccess[LastIndex].NumBytes++;
+				return;
+			}
 		}
 	}
-	return nullptr;
+
+	int index = CurIndex;
+	if (Count < kMaxMemAccessCount)
+	{
+		index = Count;
+		Count++;
+	}
+
+	MemoryAccess[index].Addr = addr;
+	MemoryAccess[index].NumBytes = 1;
+
+	LastIndex = CurIndex;
+
+	CurIndex++;
+	if (CurIndex == kMaxMemAccessCount)
+		CurIndex = 0;
+}
+
+const FMemoryAccessItem* FMemoryAccessBuf::GetItem(int index) const
+{
+	if (index < 0 || index >= Count)
+		return nullptr;
+
+	// Buffer hasn't wrapped yet.
+	if (Count < kMaxMemAccessCount)
+		return &MemoryAccess[index];
+
+	// Buffer has wrapped.
+	const int retIndex = (CurIndex + index) % kMaxMemAccessCount;
+	return &MemoryAccess[retIndex];
 }

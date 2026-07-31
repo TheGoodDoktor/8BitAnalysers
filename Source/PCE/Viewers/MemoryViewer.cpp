@@ -62,33 +62,42 @@ void FMemoryViewer::DrawUI()
 {
 	// TEMP BEGIN
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
-	const int count = pPCEEmu->GetRecentMemAccess()->GetCount();
-	for (int i = 0; i < count; i++)
-	{
-		if (const FMemoryAccessItem* pAccess = pPCEEmu->GetRecentMemAccess()->GetItem(i))
-		{
-			const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
-			std::string type = pAccess->Type == EMemoryAccessType::Read ? "R" : pAccess->Type == EMemoryAccessType::Write ? "W" : "?";
-			ImGui::Text("%s %s %s %d bytes", type.c_str(), pBank ? pBank->Name.c_str() : "None", NumStr(pAccess->GetStartAddress()), pAccess->NumBytes);
-			DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+	FRecentMemoryAccess* pRMA = pPCEEmu->GetRecentMemAccess();
 
-			if (i == pPCEEmu->GetRecentMemAccess()->GetLastReadIndex())
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+	{
+		ImGui::BeginChild("ChildL", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), ImGuiChildFlags_None, window_flags);
+		ImGui::SeparatorText("Reads");
+
+		FMemoryAccessBuf& buf = pRMA->Reads;
+		for (int i = 0; i < buf.Count; i++)
+		{
+			if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
 			{
-				ImGui::SameLine();
-				ImGui::Text(" <- Last Read");
-			}
-			if (i == pPCEEmu->GetRecentMemAccess()->GetLastWriteIndex())
-			{
-				ImGui::SameLine();
-				ImGui::Text(" <- Last Write");
-			}
-			if (i == pPCEEmu->GetRecentMemAccess()->GetCurIndex())
-			{
-				ImGui::SameLine();
-				ImGui::Text(" <- Current");
+				const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
+				ImGui::Text("%d byte%s", pAccess->NumBytes, pAccess->NumBytes > 1 ? "s " : "  ");
+				DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
 			}
 		}
+		ImGui::EndChild();
 	}
+	ImGui::SameLine();
+	{
+		ImGui::BeginChild("ChildR", ImVec2(0, 0), ImGuiChildFlags_None, window_flags);
+		FMemoryAccessBuf& buf = pRMA->Writes;
+		ImGui::SeparatorText("Writes");
+		for (int i = 0; i < buf.Count; i++)
+		{
+			if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+			{
+				const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
+				ImGui::Text("%d byte%s", pAccess->NumBytes, pAccess->NumBytes > 1 ? "s " : "  ");
+				DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+			}
+		}
+		ImGui::EndChild();
+	}
+	
 	// TEMP END
 
 	ImGui::Separator();

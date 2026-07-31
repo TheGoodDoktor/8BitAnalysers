@@ -271,7 +271,7 @@ void FPCEEmu::RegisterDataRead(uint16_t pc, uint16_t dataAddr)
 				pCodeInfo->Reads.RegisterAccess(dataAddrRef);
 		
 			// This registers reads on memory that is not the instruction operand(s)
-			pRecentMemoryAccess->RegisterAccess(EMemoryAccessType::Read, dataAddrRef);
+			pRecentMemoryAccess->Reads.RegisterAccess(dataAddrRef);
 		}
 	}
 }
@@ -300,7 +300,7 @@ void FPCEEmu::RegisterDataWrite(uint16_t pc, uint16_t dataAddr, uint8_t value)
 	{
 		// Only register writes that are not SMC
 		const FAddressRef writeAddr = state.AddressRefFromPhysicalWriteAddress(dataAddr);
-		pRecentMemoryAccess->RegisterAccess(EMemoryAccessType::Write, writeAddr);
+		pRecentMemoryAccess->Writes.RegisterAccess(writeAddr);
 	}
 
 	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pcAddr);
@@ -541,13 +541,13 @@ static bool ShouldTrackInstructionMemoryAccess(uint8_t opcode)
 void FPCEEmu::OnInstructionStarted(uint16_t pc, uint8_t opcode)
 {
 	// Is this an opcode we want to track memory reads/writes?
-	const bool bTrackAccess = ShouldTrackInstructionMemoryAccess(opcode);
+	/*const bool bTrackAccess = ShouldTrackInstructionMemoryAccess(opcode);
 	if (bTrackAccess)
 	{
 		// todo: Remove this? Not sure we need it.
 		// If we remove it, then remove OnInstructionStarted callback too.
 		pRecentMemoryAccess->SetEnabled(true);
-	}
+	}*/
 }
 
 // An instruction has finished.
@@ -595,7 +595,7 @@ void FPCEEmu::OnInstructionFinished(uint16_t pc)
 	}
 
 	// todo: remove this? not sure we need it
-	pRecentMemoryAccess->SetEnabled(false);
+	//pRecentMemoryAccess->SetEnabled(false);
 }
 
 void FPCEEmu::OnIRQ(uint16_t vector, uint16_t interruptedPC, uint16_t routineAddr)
@@ -1277,7 +1277,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	pVRAMState = new FVRAMAnalysisState(this);
 	pCDROMAnalyser = new FCDROMAnalyser(this);
-	pRecentMemoryAccess = new FRecentMemoryAccess(this);
+	pRecentMemoryAccess = new FRecentMemoryAccess();
 
 	// This is where we add the viewers we want
 	pPCEViewer = new FPCEViewer(this);
