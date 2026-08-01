@@ -35,34 +35,54 @@ void FRecentMemoryAccessViewer::DrawUI()
 
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
 	{
-		ImGui::BeginChild("ChildL", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), ImGuiChildFlags_None, window_flags);
+		ImGui::BeginChild("RMAChildL", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), ImGuiChildFlags_None, window_flags);
 		ImGui::SeparatorText("Reads");
 
 		FMemoryAccessBuf& buf = pRMA->Reads;
-		for (int i = 0; i < buf.Count; i++)
+		if (ImGui::BeginTable("RMAReadsTable", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV))
 		{
-			if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+			ImGui::TableSetupColumn("Bytes", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
+			for (int i = 0; i < buf.Count; i++)
 			{
-				const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
-				ImGui::Text("%d byte%s", pAccess->NumBytes, pAccess->NumBytes > 1 ? "s " : "  ");
-				DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+				if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+				{
+					const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text("%d", pAccess->NumBytes);
+					
+					ImGui::TableSetColumnIndex(1);
+					DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+				}
 			}
+			ImGui::EndTable();
 		}
 		ImGui::EndChild();
 	}
 	ImGui::SameLine();
 	{
-		ImGui::BeginChild("ChildR", ImVec2(0, 0), ImGuiChildFlags_None, window_flags);
+		ImGui::BeginChild("RMAChildR", ImVec2(0, 0), ImGuiChildFlags_None, window_flags);
 		FMemoryAccessBuf& buf = pRMA->Writes;
 		ImGui::SeparatorText("Writes");
-		for (int i = 0; i < buf.Count; i++)
+		if (ImGui::BeginTable("RMAWritesTable", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV))
 		{
-			if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+			ImGui::TableSetupColumn("Bytes", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
+			for (int i = 0; i < buf.Count; i++)
 			{
-				const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
-				ImGui::Text("%d byte%s", pAccess->NumBytes, pAccess->NumBytes > 1 ? "s " : "  ");
-				DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+				if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+				{
+					const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text("%d", pAccess->NumBytes);
+					
+					ImGui::TableSetColumnIndex(1);
+					DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+				}
 			}
+			ImGui::EndTable();
 		}
 		ImGui::EndChild();
 	}
