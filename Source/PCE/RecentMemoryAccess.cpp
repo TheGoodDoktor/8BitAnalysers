@@ -29,7 +29,7 @@ void FMemoryAccessBuf::Reset()
 	Count = 0;
 	CurIndex = 0;
 
-	for (int i = 0; i < kMaxMemAccessCount; i++)
+	for (int i = 0; i < kMaxCount; i++)
 	{
 		MemoryAccess[i].Addr = FAddressRef::Invalid();
 		MemoryAccess[i].NumBytes = 0;
@@ -65,7 +65,7 @@ void FMemoryAccessBuf::RegisterAccess(FAddressRef addr)
 	}
 
 	int index = CurIndex;
-	if (Count < kMaxMemAccessCount)
+	if (Count < kMaxCount)
 	{
 		index = Count;
 		Count++;
@@ -77,7 +77,7 @@ void FMemoryAccessBuf::RegisterAccess(FAddressRef addr)
 	LastIndex = CurIndex;
 
 	CurIndex++;
-	if (CurIndex == kMaxMemAccessCount)
+	if (CurIndex == kMaxCount)
 		CurIndex = 0;
 }
 
@@ -87,10 +87,10 @@ const FMemoryAccessItem* FMemoryAccessBuf::GetItem(int index) const
 		return nullptr;
 
 	// Buffer hasn't wrapped yet.
-	if (Count < kMaxMemAccessCount)
+	if (Count < kMaxCount)
 		return &MemoryAccess[index];
 
 	// Buffer has wrapped.
-	const int retIndex = (CurIndex + index) % kMaxMemAccessCount;
+	const int retIndex = (CurIndex + index) % kMaxCount;
 	return &MemoryAccess[retIndex];
 }
