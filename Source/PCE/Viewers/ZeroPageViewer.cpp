@@ -41,11 +41,7 @@ static void DrawZeroPageDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewSta
 		viewState.HighlightAddress.GetAddress() >= physAddr &&
 		viewState.HighlightAddress.GetAddress() < physAddr + item.Item->ByteSize;
 
-	const float indicatorEndX = ImGui::GetCursorPosX() + ImGui_GetFontCharWidth() * 2.0f;
-	ShowDataItemActivity(state, item.AddressRef);
-	ShowCodeAccessorActivity(state, item.AddressRef);
-
-	ImGui::SameLine(indicatorEndX);
+	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Text, bHighlight ? Colours::highlight : Colours::address);
 	ImGui::Text("%s", NumStr(physAddr));
 	ImGui::PopStyleColor();
@@ -246,8 +242,13 @@ void FZeroPageViewer::DrawUI()
 
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
+
+			const float cursorX = ImGui::GetCursorPosX();
+			ShowDataItemActivity(state, pItem->AddressRef);
+
 			if (pPendingLabel != nullptr)
 			{
+				ImGui::SameLine(cursorX + ImGui::GetTextLineHeight() * 1.5f);
 				DrawZeroPageLabel(state, viewState, *pPendingLabel);
 				pPendingLabel = nullptr;
 			}
