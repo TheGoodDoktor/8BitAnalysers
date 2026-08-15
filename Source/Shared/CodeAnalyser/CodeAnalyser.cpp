@@ -31,6 +31,7 @@
 #include "FunctionAnalyser.h"
 #include "UI/GlobalsViewer.h"
 
+// sam. Made banks global. Also made POD for speed.
 int16_t FCodeAnalysisState::BankCount = 0;
 FCodeAnalysisBank Banks[FCodeAnalysisState::kMaxBanks];
 

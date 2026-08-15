@@ -1,5 +1,7 @@
 #include "RecentMemoryAccess.h"
 
+#include "CodeAnalyser/CodeAnalyser.h"
+
 FRecentMemoryAccess::FRecentMemoryAccess()
 {
 	Reads.Reset();

@@ -968,7 +968,8 @@ private:
 	FCodeAnalysisPage*				ReadPageTable[kNoPagesInAddressSpace];
 	FCodeAnalysisPage*				WritePageTable[kNoPagesInAddressSpace];
 
-//	std::vector<FCodeAnalysisBank>	Banks;
+	// sam. Moved to .cpp file and made global.
+	//	std::vector<FCodeAnalysisBank>	Banks;
 
 	int16_t							MappedReadBanks[kNoPagesInAddressSpace];	// banks mapped into address space
 	int16_t							MappedWriteBanks[kNoPagesInAddressSpace];	// banks mapped into address space

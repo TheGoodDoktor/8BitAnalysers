@@ -39,21 +39,29 @@ void FRecentMemoryAccessViewer::DrawUI()
 		ImGui::SeparatorText("Reads");
 
 		FMemoryAccessBuf& buf = pRMA->Reads;
-		if (ImGui::BeginTable("RMAReadsTable", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV))
+		if (ImGui::BeginTable("RMAReadsTable", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollX))
 		{
 			ImGui::TableSetupColumn("Bytes", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
-			for (int i = 0; i < buf.Count; i++)
+
+			// Use a clipper because this table can be expensive to draw.
+			// This is because DrawAddressLabel is expensive as it iterates through memory.
+			ImGuiListClipper clipper;
+			clipper.Begin(buf.Count);
+			while (clipper.Step())
 			{
-				if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text("%d", pAccess->NumBytes);
-					
-					ImGui::TableSetColumnIndex(1);
-					DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+					if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+					{
+						const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("%d", pAccess->NumBytes);
+
+						ImGui::TableSetColumnIndex(1);
+						DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+					}
 				}
 			}
 			ImGui::EndTable();
@@ -69,17 +77,25 @@ void FRecentMemoryAccessViewer::DrawUI()
 		{
 			ImGui::TableSetupColumn("Bytes", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthStretch);
-			for (int i = 0; i < buf.Count; i++)
+
+			// Use a clipper because this table can be expensive to draw.
+			// This is because DrawAddressLabel is expensive as it iterates through memory.
+			ImGuiListClipper clipper;
+			clipper.Begin(buf.Count);
+			while (clipper.Step())
 			{
-				if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text("%d", pAccess->NumBytes);
-					
-					ImGui::TableSetColumnIndex(1);
-					DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+					if (const FMemoryAccessItem* pAccess = buf.GetItem(i))
+					{
+						const FCodeAnalysisBank* pBank = state.GetBank(pAccess->Addr.GetBankId());
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("%d", pAccess->NumBytes);
+
+						ImGui::TableSetColumnIndex(1);
+						DrawAddressLabel(state, state.GetFocussedViewState(), pAccess->Addr);
+					}
 				}
 			}
 			ImGui::EndTable();
