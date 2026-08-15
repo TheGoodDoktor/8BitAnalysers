@@ -251,6 +251,7 @@ void FPCEEmu::RegisterDataRead(uint16_t pc, uint16_t dataAddr)
 	// memory gets set as code in the OnInstructionEnded callback that happens _after_ the instruction has executed.
 
 	// can we check pc == dataAddr here instead?
+	// this fails to register the read if the dest address is code.
 	if (state.GetCodeInfoForPhysicalAddress(dataAddr) == nullptr)	// don't register instruction data reads
 	{
 		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
@@ -1674,6 +1675,10 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
 #endif
 		CodeAnalysis.Config.RomType = ESystemRom::Bios;
+
+#if CDROM_SUPPORT
+		pCDROMAnalyser->Reset();
+#endif
 	}
 	else
 	{

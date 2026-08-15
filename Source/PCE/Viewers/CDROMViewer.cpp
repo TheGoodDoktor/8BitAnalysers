@@ -85,6 +85,9 @@ void FCDROMViewer::DrawUI(void)
 		return;
 	}
 
+	const FCDROMAnalyser* pCDROMAnalyser = pPCEEmu->GetCDROMAnalyser();
+	ImGui::Text("First Data Track LBA: %x", pCDROMAnalyser->GetFirstDataTrackLBA());
+
 	CdRomMedia* pCdRomMedia = pPCEEmu->GetCore()->GetCDROMMedia();
 	const auto& tracks = pCdRomMedia->GetTracks();
 	const int trackCount = (int)tracks.size();

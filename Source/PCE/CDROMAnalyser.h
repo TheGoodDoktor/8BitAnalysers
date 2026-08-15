@@ -33,15 +33,23 @@ typedef std::vector<FCDROMTransfer> TCDTransferList;
 class FCDROMAnalyser
 {
 public:
+	static const uint32_t kInvalidLBA = 0xffffffff;
+
 	FCDROMAnalyser(FPCEEmu* pEmu);
+
+	void Reset();
 
 	void RegisterCDRead(const FBiosCDReadArgs& args);
 	const std::vector<TCDTransferList>& GetTrackTransfers() const { return TrackTransfers; }
 
+	uint32_t GetFirstDataTrackLBA() const { return FirstDataTrackLBA; }
+
 private:
 	std::vector<TCDTransferList> TrackTransfers; // one list per data track, indexed by track number
 
-	FPCEEmu*    pPCEEmu = nullptr;
+	uint32_t FirstDataTrackLBA = kInvalidLBA;
+
+	FPCEEmu* pPCEEmu = nullptr;
 };
 
 bool GetBiosCDReadArgs(FPCEEmu* pEmu, FBiosCDReadArgs& args);
