@@ -219,11 +219,11 @@ static const std::unordered_map<uint8_t, FHuCInstrInfo> g_HuCOpcodes =
 	{ 0xCC, { "CPY", "Compare Y with absolute" }},
 
 	// ---- BIT ----
-	{ 0x24, { "BIT", "Test bits in zero page" }},
-	{ 0x2C, { "BIT", "Test bits in absolute" }},
-	{ 0x34, { "BIT", "Test bits in zp,X" }},
-	{ 0x3C, { "BIT", "Test bits in abs,X" }},
-	{ 0x89, { "BIT", "Test bits with immediate" }},
+	{ 0x24, { "BIT (Bit Test)", "Perform AND between memory and A. Result is discarded." }}, // zp
+	{ 0x2C, { "BIT (Bit Test)", "Perform AND between memory and A. Result is discarded." }}, // abs
+	{ 0x34, { "BIT (Bit Test)", "Perform AND between memory and A. Result is discarded." }}, // zp,X
+	{ 0x3C, { "BIT (Bit Test)", "Perform AND between memory and A. Result is discarded." }}, // abs,x
+	{ 0x89, { "BIT (Bit Test)", "Perform AND between immediate value and A. Result is discarded." }}, // imm
 
 	// ---- JMP / JSR ----
 	{ 0x20, { "JSR", "Jump to subroutine" }},
@@ -694,8 +694,7 @@ static void DrawRegValue(const char* name, uint8_t cur, uint8_t old, bool bBinar
 	const bool changed = cur != old;
 	const ImVec4& col = changed ? kColChanged : kColNormal;
 	if (bBinary)
-		ImGui::TextColored(col, "%s:$%02X  bin:%s", name,
-		                   cur, NumStr(cur, ENumberDisplayMode::Binary));
+		ImGui::TextColored(col, "%s:$%02X  bin:%s", name, cur, NumStr(cur, ENumberDisplayMode::Binary));
 	else
 		ImGui::TextColored(col, "%s:%s", name, NumStr(cur));
 }
@@ -707,8 +706,7 @@ static void DrawRegTable(const FTooltipInfo& info,
 	if (info.numRegs == 0)
 		return;
 
-	static ImGuiTableFlags tflags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
-	                              | ImGuiTableFlags_SizingStretchSame;
+	static ImGuiTableFlags tflags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame;
 	if (ImGui::BeginTable("HuCRegs", info.numRegs, tflags))
 	{
 		for (int i = 0; i < info.numRegs; i++)
@@ -731,8 +729,7 @@ static void DrawRegTable(const FTooltipInfo& info,
 	}
 }
 
-static void DrawMemOperand(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState,
-                           uint16_t addr)
+static void DrawMemOperand(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, uint16_t addr)
 {
 	static ImGuiTableFlags tflags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 	if (ImGui::BeginTable("HuCMem", 1, tflags))
@@ -754,8 +751,7 @@ static void DrawMemOperand(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 // TAM / TMA special display
 // ------------------------------------------------------------
 
-static void DrawTamTma(FCodeAnalysisState& state, uint16_t pc, uint8_t op,
-                       const ICPUEmulator6502* pCPU)
+static void DrawTamTma(FCodeAnalysisState& state, uint16_t pc, uint8_t op, const ICPUEmulator6502* pCPU)
 {
 	const uint8_t mask = state.ReadByte(pc + 1);
 	const FEmuBase* pEmu = state.GetEmulator();
@@ -837,7 +833,7 @@ static bool DrawBlockTransfer(FCodeAnalysisState& state, uint16_t pc, uint8_t op
 		const uint16_t src = state.ReadWord(pc + 1);
 		const uint16_t dst = state.ReadWord(pc + 3);
 		const uint16_t len = state.ReadWord(pc + 5);
-		ImGui::Text("src=$%04X  dst=$%04X  len=$%04X (%d bytes)", src, dst, len, len);
+		ImGui::Text("Src=$%04X Dst=$%04X Len=%d bytes", src, dst, len);
 		return true;
 	}
 	return false;
@@ -931,7 +927,7 @@ void ShowCodeToolTipHuC6280(FCodeAnalysisState& state, uint16_t addr)
 		ImGui::TextUnformatted(info.Desc);
 		const char* addressMode = GetAddressModeStringHuC6280(op);
 		if (addressMode && addressMode[0] != '\0')
-			ImGui::Text("Addressing: %s", addressMode);
+			ImGui::Text("Mode: %s", addressMode);
 	}
 	else
 	{
@@ -941,16 +937,16 @@ void ShowCodeToolTipHuC6280(FCodeAnalysisState& state, uint16_t addr)
 	}
 
 	// Special-case instructions handled separately
-	if (op == 0x43 || op == 0x53)
+	/*if (op == 0x43 || op == 0x53)
 	{
 		ImGui::Separator();
 		DrawTamTma(state, addr, op, pCPU);
 		ImGui::EndTooltip();
 		return;
-	}
+	}*/
 	if (DrawBlockTransfer(state, addr, op))  { ImGui::EndTooltip(); return; }
-	if (DrawTstOperands(state, addr, op))    { ImGui::EndTooltip(); return; }
-	if (DrawBitBranchOperands(state, addr, op)) { ImGui::EndTooltip(); return; }
+	//if (DrawTstOperands(state, addr, op))    { ImGui::EndTooltip(); return; }
+	//if (DrawBitBranchOperands(state, addr, op)) { ImGui::EndTooltip(); return; }
 
 	// General register / memory display
 	if (pCPU == nullptr) { ImGui::EndTooltip(); return; }
@@ -966,7 +962,7 @@ void ShowCodeToolTipHuC6280(FCodeAnalysisState& state, uint16_t addr)
 
 	// Show immediate value in the description when it's present
 	// (instruction already named it, but show the current actual value)
-	{
+	/*{
 		const uint8_t imm8 = state.ReadByte(addr + 1);
 		switch (op)
 		{
@@ -985,14 +981,14 @@ void ShowCodeToolTipHuC6280(FCodeAnalysisState& state, uint16_t addr)
 		}
 		default: break;
 		}
-	}
+	}*/
 
 	// Flags
-	if (info.bShowFlags)
-		DrawFlagsRow(pCPU->GetP(), old.P);
+	//if (info.bShowFlags)
+	//	DrawFlagsRow(pCPU->GetP(), old.P);
 
 	// Memory is destination: snippet first, registers below
-	if (info.bHasMem && info.bMemIsDest)
+	/*if (info.bHasMem && info.bMemIsDest)
 	{
 		DrawMemOperand(state, viewState, info.memAddr);
 		DrawRegTable(info, pCPU, old);
@@ -1003,7 +999,7 @@ void ShowCodeToolTipHuC6280(FCodeAnalysisState& state, uint16_t addr)
 		DrawRegTable(info, pCPU, old);
 		if (info.bHasMem)
 			DrawMemOperand(state, viewState, info.memAddr);
-	}
+	}*/
 
 	ImGui::EndTooltip();
 }
