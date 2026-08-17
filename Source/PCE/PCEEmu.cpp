@@ -1128,7 +1128,7 @@ void FPCEEmu::CreateBanks()
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
 		// Creating as machine ROM, so it doesn't get exported by the asm exporter.
-		sprintf(bankName, "HW_PAGE%s", bankPostFix[d].c_str());
+		sprintf(bankName, "HWPAGE%s", bankPostFix[d].c_str());
 		BankSets[kBankHWPage].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pCore->GetMemory()->GetHWPageMemory(), true /*bMachineROM*/, 0x0));
 	}
 
@@ -1143,7 +1143,7 @@ void FPCEEmu::CreateBanks()
 	// Note: pMemory->GetBackupRAMSize() will report 2048 bytes but Geargfx actually has a 8192 bytes buffer.
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
-		sprintf(bankName, "SAVE_RAM%s", bankPostFix[d].c_str());
+		sprintf(bankName, "SRAM%s", bankPostFix[d].c_str());
 		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 
@@ -1153,7 +1153,7 @@ void FPCEEmu::CreateBanks()
 	{
 		for (int d = 0; d < kNumBankSetIds; d++)
 		{
-			sprintf(bankName, "CD_RAM_%d%s", i, bankPostFix[d].c_str());
+			sprintf(bankName, "CDRAM_%d%s", i, bankPostFix[d].c_str());
 			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
 		}
 	}
@@ -1174,7 +1174,7 @@ void FPCEEmu::CreateBanks()
 		}
 	}
 
-	// Unused banks. One for each mpr slot.
+	// Unmapped/unused banks. One for each mpr slot.
 	for (int d = 0; d < kNumMprSlots; d++)
 	{
 		sprintf(bankName, "UNMAPPED_%02d", d);
@@ -1495,7 +1495,7 @@ void FPCEEmu::ResetBanks()
 				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[r].GetBankId(d));
 				pBank->Memory = pBankMemory;
 
-				sprintf(bankName, "CARD_RAM_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
+				sprintf(bankName, "CARD_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
 				pBank->Name = bankName;
 			}
 			Banks[r] = &BankSets[r];	
