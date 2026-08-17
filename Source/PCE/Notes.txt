@@ -47,7 +47,12 @@ TODO
 - run rondo cd image through etripator disassembler (it has an option to disassemble a cd rom image)
 - add detection of bios calls to static analysis
 - add RW indicators to banks viewer so we can see when the banks are being read or written
- 
+- order of execution is potentially wrong for data r/w callbacks. they happen before the codeinfo is written. RecentMemoryAccess doesnt work first time code is executed. 
+- show when bank has just been changed. draw text in yellow in Mapped bank table?
+- zp memory gets marked as code. rondo of blood. even after setting back to data the operand data persists
+- look into "FAddressRef::SetVal on unmapped bank 1 HWPAGE_2. ref will be invalid." type errors. happens on RondoOfBlood in CreateCodeInfoFromJson on "OperandAddress"
+- add option to toggle function end seperators
+
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
 - vram seems to display sprite 63 pattern data at the start of vram.
