@@ -1059,7 +1059,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 			pLabel->References.RegisterAccess(state.GetCanonicalAddressRef(pc));
 
 		if (pCodeInfo != nullptr)
-			pCodeInfo->OperandAddress = state.AddressRefFromPhysicalAddress(ptr);
+			pCodeInfo->OperandAddress = state.GetCanonicalAddressRef(ptr); // sam. Make sure operand address doesn't point to a duplicate bank
 	}
 
 	const char* pOldComment = nullptr;
@@ -1274,6 +1274,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 }
 
 // TODO: this needs to be rewritten for banks
+// sam. todo: figure out what this does.
 void ReAnalyseCode(FCodeAnalysisState &state)
 {
 	int addr = 0;
@@ -1289,7 +1290,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 				FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + i);
 				pOperandData->ByteSize = 1;
 				pOperandData->DataType = EDataType::InstructionOperand;
-				pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(addr);
+				pOperandData->InstructionAddress = state.GetCanonicalAddressRef(addr);  // sam. Make sure operand address doesn't point to a duplicate bank
 				if (pOperandData->Writes.IsEmpty() == false)
 					pCodeInfo->bSelfModifyingCode = true;
 				if (i > 0)	// make sure other entries after are null
