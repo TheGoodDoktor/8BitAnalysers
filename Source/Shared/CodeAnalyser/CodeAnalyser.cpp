@@ -2100,14 +2100,22 @@ void FAddressRef::SetVal(uint32_t val)
 		const FCodeAnalysisBank& bank = Banks[BankId];
 		if (bank.PrimaryMappedPage == -1)
 		{
-			LOGINFO("FAddressRef::SetVal on unmapped bank %d %s. ref will be invalid.", BankId, bank.Name.c_str());
+			LOGWARNING("FAddressRef::SetVal for bank %d %s with no physical address (PMP is -1). Ref will be invalid.", BankId, bank.Name.c_str());
+			SetInvalid(); // Ensure it doesn't end up partially constructed 
 			return;
 		}
-		assert(bank.PrimaryMappedPage != -1);
 		const uint16_t mappedAddress = (bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 		// Convert absolute address to relative bank address 
 		const uint16_t addr = val & 0xffff;
 		BankOffset = addr - mappedAddress;
+	}
+	else
+	{
+		// BankId -1 is a legimate value. For example when serialising an invalid ref (e.g. a LastWriter for a location
+		// that has never been written) so don't warn about it.
+		if (BankId != -1)
+			LOGWARNING("FAddressRef::SetVal with invalid BankId %d. Ref will be invalid", BankId);
+		SetInvalid(); // Ensure it doesn't end up partially constructed 
 	}
 }
 bool FAddressRef::IsValid() const 
