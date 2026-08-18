@@ -57,7 +57,8 @@ void DrawMCPSuggestionsUI(FEmuBase* pEmu, FMCPSuggestionQueue& queue)
 		ImGuiTableFlags_Borders |
 		ImGuiTableFlags_RowBg |
 		ImGuiTableFlags_ScrollY |
-		ImGuiTableFlags_SizingStretchProp;
+		ImGuiTableFlags_SizingStretchProp |
+		ImGuiTableFlags_Resizable; // sam. Made resizable
 
 	const float reservedHeight = ImGui::GetFrameHeightWithSpacing() * 2.5f;
 	if (ImGui::BeginTable("suggestions", 6, tableFlags, ImVec2(0, -reservedHeight)))
@@ -73,6 +74,8 @@ void DrawMCPSuggestionsUI(FEmuBase* pEmu, FMCPSuggestionQueue& queue)
 
 		for (int i = 0; i < count; i++)
 		{
+			ImGui::PushID(i); // sam
+
 			const FMCPSuggestion& s = suggestions[i];
 
 			ImGui::TableNextRow();
@@ -95,25 +98,38 @@ void DrawMCPSuggestionsUI(FEmuBase* pEmu, FMCPSuggestionQueue& queue)
 
 			ImGui::TableSetColumnIndex(3);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, 1.0f));
-			ImGui::TextUnformatted(s.NewValue.c_str());
+			ImGui::TextWrapped(s.NewValue.c_str()); // sam. Made text wrapped
 			ImGui::PopStyleColor();
+			
+			if (ImGui::SmallButton("Copy##NewValue"))
+			{
+				ImGui::SetClipboardText(s.NewValue.c_str());
+			}
 
 			ImGui::TableSetColumnIndex(4);
 			ImGui::TextWrapped("%s", s.Rationale.c_str());
-
-			if (ImGui::SmallButton("Copy"))
+			if (ImGui::SmallButton("Copy##Rationale")) // sam
 			{
 				ImGui::SetClipboardText(s.Rationale.c_str());
 			}
 
+			if (s.AddressRef.IsValid())
+			{
+				ImGui::SameLine();
+				if (ImGui::SmallButton("To Comment")) // sam
+					AddRationaleAsComment(pEmu, s);
+			}
+
 			ImGui::TableSetColumnIndex(5);
-			ImGui::PushID(i);
+			//ImGui::PushID(i); // sam
 			if (ImGui::SmallButton("Accept"))
 				acceptIndex = i;
 			ImGui::SameLine();
 			if (ImGui::SmallButton("Reject"))
 				rejectIndex = i;
-			ImGui::PopID();
+			//ImGui::PopID(); // sam
+
+			ImGui::PopID(); // sam
 		}
 
 		ImGui::EndTable();
@@ -125,6 +141,12 @@ void DrawMCPSuggestionsUI(FEmuBase* pEmu, FMCPSuggestionQueue& queue)
 	ImGui::SameLine();
 	if (ImGui::Button("Reject All"))
 		rejectAll = true;
+	ImGui::SameLine();
+	if (ImGui::Button("Comment All Rationales"))
+	{
+		for (const FMCPSuggestion& s : suggestions)
+			AddRationaleAsComment(pEmu, s);
+	}
 
 	ImGui::End();
 
