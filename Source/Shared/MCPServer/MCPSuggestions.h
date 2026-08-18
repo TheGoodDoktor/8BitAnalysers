@@ -29,6 +29,11 @@ class FEmuBase;
 
 void ApplySuggestion(FEmuBase* pEmu, const FMCPSuggestion& suggestion);
 
+// Adds the suggestion's rationale as a multi-line comment block at its address.
+// If a comment block already exists at the address, the rationale is appended
+// (unless it's already present), rather than overwriting the existing comment.
+void AddRationaleAsComment(FEmuBase* pEmu, const FMCPSuggestion& suggestion);
+
 class FMCPSuggestionQueue
 {
 public:
