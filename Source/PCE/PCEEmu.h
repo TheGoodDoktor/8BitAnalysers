@@ -186,7 +186,7 @@ protected:
 	void MapMprBanks();
 	int16_t GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
 	
-	void MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
+	bool MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
 
 	void BuildCanonicalBankIdLookup();
 	void BuildBankSetLookup();

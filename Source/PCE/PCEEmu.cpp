@@ -1529,17 +1529,25 @@ void FPCEEmu::MapMprBanks()
 #endif
 }
 
-void FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
+bool FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 {
 	const int bankIndex = pMemory->GetMpr(mprIndex);
-	Banks[bankIndex]->ClaimSpecificBank(bankId, mprIndex);
+
+	// This can fail if the bank id saved in the project's analysis json is stale relative to
+	// the mpr register value restored from the machine state (e.g. the two files were
+	// saved at different points in time). 
+	if (!Banks[bankIndex]->ClaimSpecificBank(bankId, mprIndex))
+	{
+		LOGERROR("MapBankIdToMprSlot failed: bank id %d not found in bank set %d (mpr slot %d).", bankId, bankIndex, mprIndex);
+		return false;
+	}
 	MprBankSet[mprIndex] = bankIndex;
 
 	FCodeAnalysisBank* pInBank = CodeAnalysis.GetBank(bankId);
 
 	assert(pInBank);
 	if (!pInBank)
-		return;
+		return false;
 
 	FCodeAnalysisState& state = CodeAnalysis;
 
@@ -1549,6 +1557,7 @@ void FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 	state.MapBank(bankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
 	MprBankId[mprIndex] = bankId;
+	return true;
 }
 
 
@@ -1962,7 +1971,14 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 	{
 		const auto& mprBankIds = jsonDoc["MprBankIds"];
 		for (int i = 0; i < kNumMprSlots && i < (int)mprBankIds.size(); i++)
-			MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]);
+		{
+			if (!MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]))
+			{
+				// The bank ids saved in the analysis json don't match the machine state we just restored. 
+				SetLastError("Failed to restore mpr bank mapping for slot %d, bank id %d. Project data may be out of sync with the machine state.", i, (int16_t)mprBankIds[i]);
+				return false;
+			}
+		}
 	}
 
 	if (jsonDoc.contains("BankSlotStats"))
