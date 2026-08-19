@@ -52,6 +52,9 @@ TODO
 - zp memory gets marked as code. rondo of blood. even after setting back to data the operand data persists
 - look into "FAddressRef::SetVal on unmapped bank 1 HWPAGE_2. ref will be invalid." type errors. happens on RondoOfBlood in CreateCodeInfoFromJson on "OperandAddress"
 - add option to toggle function end seperators
+- zp memory gets marked as code. rondo of blood. even after setting back to data the operand data persists. maybe fixed...
+- add option to toggle function end seperators
+- FBankSet::ClaimSpecificBank can fail to find bank. happened with rabio lepus.
 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
@@ -142,3 +145,4 @@ DONE
 - ask claude to look at Mesen "draw partial frame" option to see how it does it.
 - in graphics viewer, label which palette is currently selected 
 - change Current palette option in graphics viewer. doesnt make sense for PCE
+- look into "FAddressRef::SetVal on unmapped bank 1 HWPAGE_2. ref will be invalid." type errors. happens on RondoOfBlood in CreateCodeInfoFromJson on "OperandAddress"
