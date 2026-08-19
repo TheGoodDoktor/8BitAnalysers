@@ -191,7 +191,15 @@ void FZeroPageViewer::DrawUI()
 
 	int numLocationsDisplayed = 0;
 
-	std::vector<const FCodeAnalysisItem*> zeroPageItems;
+	// One row per data item, with the preceding label (if any) merged in so the row count is known up front for the clipper.
+	struct FZeroPageRow
+	{
+		const FCodeAnalysisItem* pDataItem = nullptr;
+		const FCodeAnalysisItem* pLabelItem = nullptr;
+	};
+
+	std::vector<FZeroPageRow> zeroPageRows;
+	const FCodeAnalysisItem* pPendingLabel = nullptr;
 	for (const FCodeAnalysisItem& item : pBank->ItemList)
 	{
 		const uint16_t addr = item.AddressRef.GetAddress();
@@ -216,10 +224,17 @@ void FZeroPageViewer::DrawUI()
 			}
 		}
 
+		if (item.Item->Type == EItemType::Label)
+		{
+			pPendingLabel = &item;
+			continue;
+		}
+
 		if (item.Item->Type == EItemType::Data) // will zero page ever contain code?
 			numLocationsDisplayed++;
 
-		zeroPageItems.push_back(&item);
+		zeroPageRows.push_back({ &item, pPendingLabel });
+		pPendingLabel = nullptr;
 	}
 
 	ImGui::Text("Showing: %d locations", numLocationsDisplayed);
@@ -231,34 +246,33 @@ void FZeroPageViewer::DrawUI()
 		ImGui::TableSetupColumn("##data",    ImGuiTableColumnFlags_WidthFixed,   0.0f);
 		ImGui::TableSetupColumn("##comment", ImGuiTableColumnFlags_WidthStretch);
 
-		const FCodeAnalysisItem* pPendingLabel = nullptr;
-		for (const FCodeAnalysisItem* pItem : zeroPageItems)
+		ImGuiListClipper clipper;
+		clipper.Begin((int)zeroPageRows.size());
+		while (clipper.Step())
 		{
-			if (pItem->Item->Type == EItemType::Label)
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 			{
-				pPendingLabel = pItem;
-				continue;
+				const FZeroPageRow& row = zeroPageRows[i];
+
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				const float cursorX = ImGui::GetCursorPosX();
+				ShowDataItemActivity(state, row.pDataItem->AddressRef);
+
+				if (row.pLabelItem != nullptr)
+				{
+					ImGui::SameLine(cursorX + ImGui::GetTextLineHeight() * 1.5f);
+					DrawZeroPageLabel(state, viewState, *row.pLabelItem);
+				}
+				ImGui::TableSetColumnIndex(1);
+				DrawZeroPageDataItem(state, viewState, *row.pDataItem);
+				ImGui::TableSetColumnIndex(2);
+				ImGui::PushID(row.pDataItem->Item);
+				ImGui::SetNextItemWidth(-1.0f);
+				ImGui::InputText("##comment", &row.pDataItem->Item->Comment);
+				ImGui::PopID();
 			}
-
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
-
-			const float cursorX = ImGui::GetCursorPosX();
-			ShowDataItemActivity(state, pItem->AddressRef);
-
-			if (pPendingLabel != nullptr)
-			{
-				ImGui::SameLine(cursorX + ImGui::GetTextLineHeight() * 1.5f);
-				DrawZeroPageLabel(state, viewState, *pPendingLabel);
-				pPendingLabel = nullptr;
-			}
-			ImGui::TableSetColumnIndex(1);
-			DrawZeroPageDataItem(state, viewState, *pItem);
-			ImGui::TableSetColumnIndex(2);
-			ImGui::PushID(pItem->Item);
-			ImGui::SetNextItemWidth(-1.0f);
-			ImGui::InputText("##comment", &pItem->Item->Comment);
-			ImGui::PopID();
 		}
 
 		ImGui::EndTable();
