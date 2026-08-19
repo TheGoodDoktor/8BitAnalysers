@@ -2450,16 +2450,33 @@ void FPCEEmu::SoftResetMachine()
 
 void FPCEEmu::OnEnterEditMode(void)
 {
+	/*
 	pCore->SaveState(nullptr, EditModeBackupStateSize);
 	free(pEditModeBackupState);
 	pEditModeBackupState = (uint8_t*)malloc(EditModeBackupStateSize);
 	pCore->SaveState(pEditModeBackupState, EditModeBackupStateSize);
+	*/
 }
 
 void FPCEEmu::OnExitEditMode(void)
 {
+	// This is disabled in EmuBase because I think there is a bug with it (needs confirmation).
+	// Note from Claude: "This restores raw hardware state (CPU regs, RAM, MPR registers) but never resyncs the analyser-side 
+	// bookkeeping (MprBankId/MprBankSet/FBankSet::SlotBankId) afterward — unlike LoadProject, which 
+	// explicitly does ResetBanks(); MapMprBanks(); right after its own raw-state restore (PCEEmu.cpp:2424-2427)
+	// Spectrum and CPC have the identical gap — zx_load_snapshot/cpc_load_snapshot restore raw state without resyncing their 
+	// own bank caches (CurROMBank/CurRAMBank)."
+
 	if (pEditModeBackupState != nullptr)
+	{
 		pCore->LoadState(pEditModeBackupState, EditModeBackupStateSize);
+		
+		// potential fix:
+		// Resync MprBankId/MprBankSet/FBankSet::SlotBankId to the just-restored
+		// MPR hardware registers — same pairing LoadProject uses after LoadMachineState().
+		/*ResetBanks();
+		MapMprBanks();*/
+	}
 }
 
 
