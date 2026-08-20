@@ -242,6 +242,12 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		trapId = kTrapId_Step;
 	}
 
+	// sam. Bank-agnostic variant of the RunToAddress check above. Added for MCP use.
+	if (RunToPhysicalAddress && PC.GetAddress() == *RunToPhysicalAddress)
+	{
+		trapId = kTrapId_Step;
+	}
+
 	if (StepMode != EDebugStepMode::None)
 	{
 		switch (StepMode)
@@ -568,21 +574,34 @@ void	FDebugger::SaveToFile(FILE* fp)
 
 
 void FDebugger::Break()
-{ 
-    RunToAddress = std::nullopt; 
+{
+    RunToAddress = std::nullopt;
+    RunToPhysicalAddress = std::nullopt;
     StepMode = EDebugStepMode::None;
     bDebuggerStopped = true;
 }
 
 void FDebugger::Continue(std::optional<FAddressRef> runToAddress)
-{ 
+{
     RunToAddress = runToAddress;
-    StepMode = EDebugStepMode::None; 
-    bDebuggerStopped = false; 
+    RunToPhysicalAddress = std::nullopt;
+    StepMode = EDebugStepMode::None;
+    bDebuggerStopped = false;
 
     SelectedCallstackNo = -1;
 }
 
+// sam. Like Continue() but matches PC on the raw 16-bit address alone, regardless of which bank is
+// currently mapped. Added for MCP use.
+void FDebugger::ContinueToPhysicalAddress(uint16_t runToPhysicalAddress)
+{
+    RunToAddress = std::nullopt;
+    RunToPhysicalAddress = runToPhysicalAddress;
+    StepMode = EDebugStepMode::None;
+    bDebuggerStopped = false;
+
+    SelectedCallstackNo = -1;
+}
 
 void FDebugger::StepInto()
 {

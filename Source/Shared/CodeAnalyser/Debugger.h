@@ -10,14 +10,10 @@
 #include <stdio.h>
 #include <assert.h>
 
-// sam. Set to 1 to use fixed-capacity raw C arrays for FrameTrace and CallStack instead
-// of std::vector. Benefits in MSVC debug builds: no _STL_VERIFY overhead on every
-// operator[], no heap allocation per push_back after the first reserve, and the
-// element type (FAddressRef, FCPUFunctionCall) is trivially constructible.
 #define POD_DEBUGGER_CONTAINERS 1
 
 #if POD_DEBUGGER_CONTAINERS
-// Fixed-capacity buffer backed by a raw C array.
+// sam. Fixed-capacity buffer backed by a raw C array.
 // Mirrors the std::vector interface used by FrameTrace and CallStack so that
 // call sites need no changes. Raw array indexing has no bounds-check overhead
 // in debug builds, unlike std::array (which routes through _STL_VERIFY) or
@@ -175,6 +171,7 @@ public:
 	// Actions
 	void	Break();
 	void	Continue(std::optional<FAddressRef> runToAddress = std::nullopt); // sam. renamed stepToCursorAddr -> RunToAddress
+	void	ContinueToPhysicalAddress(uint16_t runToPhysicalAddress); // sam. like Continue() but matches on raw 16-bit address, ignoring which bank is executing
 	void	StepInto();
 	void	StepOver();
 	void	StepFrame();
@@ -263,6 +260,7 @@ private:
 	std::vector<FBreakpoint>	Breakpoints;
 	uint32_t					BreakpointMask = 0;
 	std::optional<FAddressRef>	RunToAddress; // sam. renamed stepToCursorAddr -> RunToAddress
+	std::optional<uint16_t>	RunToPhysicalAddress; // sam. bank-agnostic variant of RunToAddress
 	int							ScanlineBreakpoint = -1;
 	std::vector<FWatch>			Watches;
 	FWatch						SelectedWatch;
