@@ -28,7 +28,7 @@ static void BuildGreyscalePalette(uint32_t* out)
 FPCENewGraphicsViewer::FPCENewGraphicsViewer(FEmuBase* pEmu)
 	: FGraphicsViewerBase(pEmu)
 {
-	Name = "PCE Graphics";
+	Name = "Graphics";
 	pPCEEmu = static_cast<FPCEEmu*>(pEmu);
 
 	BuildGreyscalePalette(GreyscalePalette);

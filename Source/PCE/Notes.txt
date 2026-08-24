@@ -2,8 +2,6 @@ TODO FOR FIRST RELEASE
 - eliminate all dupe bank bugs (some still exist)
 - OnEnterEditMode() get working
 - edit mode doesnt restore properly. emulation bugs afer restoring
-- get graphics viewer displaying sprites
-- remove dupe banks from graphics viewer dropdown. also unused banks
 - tidy up sprites viewer detail pane
 - bank addresses should be offsets (including function labels)? toggle in UI
 - fix trace button in code analysis view (sometimes works)
@@ -49,7 +47,6 @@ TODO
 - add RW indicators to banks viewer so we can see when the banks are being read or written
 - regenerate disassembly text when soft reset. if you reset rondo the memory is all 0 but it still shows disassembly from before reset.
 - when break execution mark each line of disassembly in the callstack (like in visual studio when you break execution)
- 
 - order of execution is potentially wrong for data r/w callbacks. they happen before the codeinfo is written. RecentMemoryAccess doesnt work first time code is executed. 
 - show when bank has just been changed. draw text in yellow in Mapped bank table?
 - zp memory gets marked as code. rondo of blood. even after setting back to data the operand data persists
@@ -58,6 +55,7 @@ TODO
 - zp memory gets marked as code. rondo of blood. even after setting back to data the operand data persists. maybe fixed...
 - add option to toggle function end seperators
 - FBankSet::ClaimSpecificBank can fail to find bank. happened with rabio lepus.
+- add all cd banks to graphics viewer
 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
@@ -149,3 +147,5 @@ DONE
 - in graphics viewer, label which palette is currently selected 
 - change Current palette option in graphics viewer. doesnt make sense for PCE
 - look into "FAddressRef::SetVal on unmapped bank 1 HWPAGE_2. ref will be invalid." type errors. happens on RondoOfBlood in CreateCodeInfoFromJson on "OperandAddress"
+- get graphics viewer displaying sprites
+- remove dupe banks from graphics viewer dropdown. also unused banks
