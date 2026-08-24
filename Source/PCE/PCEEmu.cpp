@@ -1299,7 +1299,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));
 	AddViewer(new FZeroPageViewer(this));
+#ifndef NDEBUG
 	AddViewer(new FPCEGraphicsViewer(this));
+#endif
 	AddViewer(new FRecentMemoryAccessViewer(this));
 #if CDROM_SUPPORT
 	pCDROMViewer = new FCDROMViewer(this);
