@@ -61,6 +61,7 @@ void ProcessDebuggerKeyCommands(FCodeAnalysisState& state); // sam
 void DrawGlobals(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState);
 
 float DrawDataBinary(FCodeAnalysisState& state, const FDataInfo* pDataInfo);
+void DrawLabelInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void DrawDataInfo(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem &item, bool bDrawLabel = false, bool bEdit = true);
 void DrawDataDetails(FCodeAnalysisState &state, FCodeAnalysisViewState& viewState, const FCodeAnalysisItem& item);
 void ShowDataItemActivity(FCodeAnalysisState& state, FAddressRef addr);

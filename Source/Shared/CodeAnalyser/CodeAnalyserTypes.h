@@ -200,8 +200,7 @@ struct FAddressRef
 	// Intentionally trivial (= default with no member initialisers) so that the type
 	// is trivially constructible. This means:
 	//   - Creating a raw C array of FAddressRef (e.g. a ring buffer) has zero cost in
-	//     all build modes, including MSVC debug which inserts _STL_VERIFY into std
-	//     containers but leaves raw arrays alone.
+	//     all build modes.
 	//   - The fields are LEFT UNINITIALISED on default construction. Do NOT rely on
 	//     a default-constructed FAddressRef being invalid — use FAddressRef::Invalid()
 	//     if you want it to be invalid.

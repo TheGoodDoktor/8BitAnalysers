@@ -81,7 +81,10 @@ bool FBankSet::ClaimSpecificBank(int16_t bankId, int mprSlot)
 		{
 			assert(!entry.bMapped);
 			if (entry.bMapped)
+			{
+				LOGERROR("ClaimSpecificBank: Entry already mapped! bankId=%d mprSlot=%d", bankId, mprSlot);
 				return false; // Already mapped (corrupt state)
+			}
 
 			assert(SlotBankId[mprSlot] == -1);
 			SlotBankId[mprSlot] = i;
@@ -90,6 +93,8 @@ bool FBankSet::ClaimSpecificBank(int16_t bankId, int mprSlot)
 			return true;
 		}
 	}
+	LOGERROR("ClaimSpecificBank: Could not find bankId in bank set. bankId=%d mprSlot=%d", bankId, mprSlot);
+
 	return false;
 }
 

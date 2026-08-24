@@ -31,6 +31,7 @@
 #include "FunctionAnalyser.h"
 #include "UI/GlobalsViewer.h"
 
+// sam. Made banks global. Also made POD for speed.
 int16_t FCodeAnalysisState::BankCount = 0;
 FCodeAnalysisBank Banks[FCodeAnalysisState::kMaxBanks];
 
@@ -845,10 +846,15 @@ FLabelInfo* GenerateLabelForAddress(FCodeAnalysisState &state, FAddressRef addre
 				snprintf(label, kLabelSize, "data_%s_%04X", pBank ? pBank->Name.c_str() : "unknown", address.GetAddress());
 
 			// zero page labels for 6502
-			if ((state.CPUInterface->CPUType == ECPUType::M6502 && address.GetAddress() < 256) ||
-			   (state.CPUInterface->CPUType == ECPUType::HuC6280 && address.GetAddress() >= 0x2000 && address.GetAddress() < 0x2100))
+			if (state.CPUInterface->CPUType == ECPUType::M6502)
 			{
-				snprintf(label, kLabelSize, "zp_%02X", address.GetAddress());
+				if (address.GetAddress() < 256)
+					snprintf(label, kLabelSize, "zp_%02X", address.GetAddress());
+			}
+			else if (state.CPUInterface->CPUType == ECPUType::HuC6280)
+			{
+				if (address.GetAddress() >= 0x2000 && address.GetAddress() < 0x2100)
+					snprintf(label, kLabelSize, "zp_%02X", address.GetAddress() - 0x2000);
 			}
 			if (bLabelOnOperand == false)
 				pLabel->Global = true;	// operand labels should be local
@@ -1053,7 +1059,7 @@ bool AnalyseAtPC(FCodeAnalysisState &state, uint16_t& pc)
 			pLabel->References.RegisterAccess(state.GetCanonicalAddressRef(pc));
 
 		if (pCodeInfo != nullptr)
-			pCodeInfo->OperandAddress = state.AddressRefFromPhysicalAddress(ptr);
+			pCodeInfo->OperandAddress = state.GetCanonicalAddressRef(ptr); // sam. Make sure operand address doesn't point to a duplicate bank
 	}
 
 	const char* pOldComment = nullptr;
@@ -1214,6 +1220,7 @@ void RunStaticCodeAnalysis(FCodeAnalysisState &state, uint16_t pc)
 
 uint16_t g_DbgReadAddress = 0xddf8;
 
+// sam. We are not using this function for PCE. We have our own version in PCEEmu.cpp
 void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 {
 	if (dataAddr == g_DbgReadAddress)
@@ -1240,6 +1247,7 @@ void RegisterDataRead(FCodeAnalysisState& state, uint16_t pc, uint16_t dataAddr)
 	}
 }
 
+// sam. We are not using this function for PCE. We have our own version in PCEEmu.cpp
 void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,uint8_t value)
 {
 	const FAddressRef pcAddr = state.GetCanonicalAddressRef(pc);
@@ -1266,6 +1274,7 @@ void RegisterDataWrite(FCodeAnalysisState &state, uint16_t pc,uint16_t dataAddr,
 }
 
 // TODO: this needs to be rewritten for banks
+// sam. todo: figure out what this does.
 void ReAnalyseCode(FCodeAnalysisState &state)
 {
 	int addr = 0;
@@ -1281,7 +1290,7 @@ void ReAnalyseCode(FCodeAnalysisState &state)
 				FDataInfo* pOperandData = state.GetReadDataInfoForAddress(addr + i);
 				pOperandData->ByteSize = 1;
 				pOperandData->DataType = EDataType::InstructionOperand;
-				pOperandData->InstructionAddress = state.AddressRefFromPhysicalAddress(addr);
+				pOperandData->InstructionAddress = state.GetCanonicalAddressRef(addr);  // sam. Make sure operand address doesn't point to a duplicate bank
 				if (pOperandData->Writes.IsEmpty() == false)
 					pCodeInfo->bSelfModifyingCode = true;
 				if (i > 0)	// make sure other entries after are null
@@ -1620,10 +1629,12 @@ void	FCodeAnalysisState::OnMachineFrameStart()
 }
 void	FCodeAnalysisState::OnMachineFrameEnd()
 {
+	// sam. Modified this to increment the current frame when stepping a frame.
+	const bool bWasStopped = Debugger.IsStopped();
 	IOAnalyser.OnMachineFrameEnd();
 	Debugger.OnMachineFrameEnd();
-    if (Debugger.IsStopped() == false)
-        CurrentFrameNo++;
+	if (bWasStopped == false)
+		CurrentFrameNo++;
 }
 
 void FCodeAnalysisState::OnCPUTick(uint64_t pins)
@@ -2089,14 +2100,22 @@ void FAddressRef::SetVal(uint32_t val)
 		const FCodeAnalysisBank& bank = Banks[BankId];
 		if (bank.PrimaryMappedPage == -1)
 		{
-			LOGINFO("FAddressRef::SetVal on unmapped bank %d %s. ref will be invalid.", BankId, bank.Name.c_str());
+			LOGWARNING("FAddressRef::SetVal for bank %d %s with no physical address (PMP is -1). Ref will be invalid.", BankId, bank.Name.c_str());
+			SetInvalid(); // Ensure it doesn't end up partially constructed 
 			return;
 		}
-		assert(bank.PrimaryMappedPage != -1);
 		const uint16_t mappedAddress = (bank.PrimaryMappedPage * FCodeAnalysisPage::kPageSize);
 		// Convert absolute address to relative bank address 
 		const uint16_t addr = val & 0xffff;
 		BankOffset = addr - mappedAddress;
+	}
+	else
+	{
+		// BankId -1 is a legimate value. For example when serialising an invalid ref (e.g. a LastWriter for a location
+		// that has never been written) so don't warn about it.
+		if (BankId != -1)
+			LOGWARNING("FAddressRef::SetVal with invalid BankId %d. Ref will be invalid", BankId);
+		SetInvalid(); // Ensure it doesn't end up partially constructed 
 	}
 }
 bool FAddressRef::IsValid() const 

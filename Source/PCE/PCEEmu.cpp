@@ -19,13 +19,18 @@
 #include "Viewers/SpriteViewer.h"
 #include "Viewers/VRAMViewer.h"
 #include "Viewers/CDROMViewer.h"
+#include "Viewers/RecentMemoryAccessViewer.h"
 #include "VRAMAnalyser.h"
 #include "CDROMAnalyser.h"
+#include "RecentMemoryAccess.h"
+
 #include "Viewers/PCEGraphicsViewer.h"
 #include "Viewers/PCENewGraphicsViewer.h"
 #include "Viewers/MemoryViewer.h"
+#include "Viewers/ZeroPageViewer.h"
 #include "Viewers/GameDbViewer.h"
 #include "CodeAnalyser/AssemblerExport.h"
+#include "CodeAnalyser/6502/CodeAnalyserHuC6280.h"
 #include "CodeAnalyser/UI/6502/RegisterView6502.h"
 #include "CodeAnalyser/UI/OverviewViewer.h"
 #include "CodeAnalyser/UI/GlobalsViewer.h"
@@ -235,22 +240,101 @@ ICPUEmulator* FPCEEmu::GetCPUEmulator(void) const
 	return pPCE6502CPU;
 }
 
+// This is a PCE specific version of RegisterDataRead from CodeAnalyser.cpp
+void FPCEEmu::RegisterDataRead(uint16_t pc, uint16_t dataAddr)
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+
+	// todo: fix order of execution issue here?
+	// if this is the first time we've executed this location, then the memory won't be set as code.
+	// this means this check will return a false positive.
+	// memory gets set as code in the OnInstructionEnded callback that happens _after_ the instruction has executed.
+
+	// can we check pc == dataAddr here instead?
+	// this fails to register the read if the dest address is code.
+	if (state.GetCodeInfoForPhysicalAddress(dataAddr) == nullptr)	// don't register instruction data reads
+	{
+		FDataInfo* pDataInfo = state.GetReadDataInfoForAddress(dataAddr);
+		if (pDataInfo->DataType != EDataType::InstructionOperand)
+		{
+			// Register the read if we are not reading an instruction operand.
+			pDataInfo->ReadCount++;
+			pDataInfo->LastFrameRead = state.CurrentFrameNo;
+			pDataInfo->LastRead = state.ExecutionCounter;
+
+			// todo: pass the pc addressref in?
+			const FAddressRef canonicalPc = state.GetCanonicalAddressRef(pc);
+			pDataInfo->Reads.RegisterAccess(canonicalPc);
+
+			// what is this codeinfo for?
+			const FAddressRef dataAddrRef = state.GetCanonicalReadAddressRef(dataAddr);
+			FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(canonicalPc);
+			if (pCodeInfo)
+				pCodeInfo->Reads.RegisterAccess(dataAddrRef);
+		
+			// This registers reads on memory that is not the instruction operand(s)
+			pRecentMemoryAccess->Reads.RegisterAccess(dataAddrRef);
+		}
+	}
+}
+
+// This is a PCE specific version of RegisterDataWrite from CodeAnalyser.cpp
+void FPCEEmu::RegisterDataWrite(uint16_t pc, uint16_t dataAddr, uint8_t value)
+{
+	FCodeAnalysisState& state = GetCodeAnalysis();
+
+	const FAddressRef pcAddr = state.GetCanonicalAddressRef(pc);
+	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
+	pDataInfo->WriteCount++;
+	pDataInfo->LastFrameWritten = state.CurrentFrameNo;
+	pDataInfo->LastWritten = state.ExecutionCounter;
+	pDataInfo->Writes.RegisterAccess(pcAddr);
+
+	// check for SMC
+	if (pDataInfo->DataType == EDataType::InstructionOperand)
+	{
+		// TODO: record some info such as what byte was written
+		FCodeInfo* pCodeWrittenTo = state.GetCodeInfoForAddress(pDataInfo->InstructionAddress);
+		if (pCodeWrittenTo != nullptr)	// sometime data can be malformed so do a defensive check
+			pCodeWrittenTo->bSelfModifyingCode = true;
+	}
+	else
+	{
+		// Only register writes that are not SMC
+		const FAddressRef writeAddr = state.AddressRefFromPhysicalWriteAddress(dataAddr);
+		pRecentMemoryAccess->Writes.RegisterAccess(writeAddr);
+	}
+
+	FCodeInfo* pCodeInfo = state.GetCodeInfoForAddress(pcAddr);
+	if (pCodeInfo)
+	{
+		pCodeInfo->Writes.RegisterAccess(state.GetCanonicalWriteAddressRef(dataAddr));
+	}
+}
+
+static void OnInstructionStarted(void* pContext, uint16_t pc, u8 opcode)
+{
+	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
+
+	pEmu->OnInstructionStarted(pc, opcode);
+}
+
 // This is a geargfx specific version of FDebugger::Tick()
-void OnInstructionExecuted(void* pContext, uint16_t pc)
+void OnInstructionFinished(void* pContext, uint16_t pc)
 {
 	//OPTICK_EVENT();
 
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
-	pEmu->OnInstructionExecuted(pc);
+	pEmu->OnInstructionFinished(pc);
 }
 
-void OnIRQ(void* pContext, uint16_t vector, uint16_t interruptedPc, uint16_t routineAddr)
+static void OnIRQ(void* pContext, uint16_t vector, uint16_t interruptedPc, uint16_t routineAddr)
 {
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	pEmu->OnIRQ(vector, interruptedPc, routineAddr);
 }
 
-void OnMemoryRead(void* pContext, u16 dataAddr)
+static void OnMemoryRead(void* pContext, u16 dataAddr)
 {
 	//OPTICK_EVENT();
 
@@ -258,10 +342,10 @@ void OnMemoryRead(void* pContext, u16 dataAddr)
 	FCodeAnalysisState& state = pEmu->GetCodeAnalysis();
 	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = state.Debugger.GetPC().GetAddress();
-	RegisterDataRead(state, pc, dataAddr);
+	pEmu->RegisterDataRead(pc, dataAddr);
 }
 
-void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
+static void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 {
 	//OPTICK_EVENT();
 
@@ -270,7 +354,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	FDebugger& debugger = state.Debugger;
 	// todo: why not use PC from geargrafx here?
 	const uint16_t pc = debugger.GetPC().GetAddress();
-	RegisterDataWrite(state, pc, dataAddr, value);
+	pEmu->RegisterDataWrite(pc, dataAddr, value);
 
 	const FAddressRef addrRef = state.GetCanonicalAddressRef(dataAddr);
 
@@ -323,7 +407,7 @@ void OnMemoryWritten(void* pContext, u16 dataAddr, u8 value)
 	}
 }
 
-void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
+static void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBankIndex)
 {
 	OPTICK_EVENT();
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
@@ -344,7 +428,7 @@ void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 newBank
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
 
-void OnVRAMWritten(void* pContext, u16 vramAddr, u16 value)
+static void OnVRAMWritten(void* pContext, u16 vramAddr, u16 value)
 {
 	//OPTICK_EVENT();
 
@@ -352,7 +436,7 @@ void OnVRAMWritten(void* pContext, u16 vramAddr, u16 value)
 	pEmu->OnVRAMWritten(vramAddr, value);
 }
 
-void OnVRAMRead(void* pContext, u16 vramAddr, u16 value)
+static void OnVRAMRead(void* pContext, u16 vramAddr, u16 value)
 {
 	FPCEEmu* pEmu = static_cast<FPCEEmu*>(pContext);
 	pEmu->OnVRAMRead(vramAddr, value);
@@ -419,8 +503,58 @@ void FPCEEmu::OnVRAMWritten(uint16_t vramAddr, uint16_t value)
 }*/
 
 
+static bool ShouldTrackInstructionMemoryAccess(uint8_t opcode)
+{
+	return true;
+	
+	// todo: remove this if we dont need it
+	/*const EAddressMode addressMode = GetInstructionAddressModeHuC6280(opcode);
+	
+	switch (addressMode)
+	{
+		case EAddressMode::ZPIndirect_X:       // (zp:X)
+		case EAddressMode::ZP:                 // zp
+		case EAddressMode::Immediate:          // #
+		case EAddressMode::Absolute:           // abs
+		case EAddressMode::ZPIndirect_Y:       // (zp):Y
+		case EAddressMode::ZP_X:               // zp:X
+		case EAddressMode::Absolute_Y:         // abs:Y
+		case EAddressMode::Absolute_X:         // abs:X
+		case EAddressMode::Accumulator:        // A
+		case EAddressMode::ZPIndirect:         // (zp)
+		case EAddressMode::ZP_Y:               // zp:Y
+		case EAddressMode::Relative:           // rel
+		case EAddressMode::AbsoluteIndirect:   // (abs)
+		case EAddressMode::AbsoluteIndirect_X: // (abs:X)
+		case EAddressMode::ZPRelative:         // zp:rel  (BBR/BBS)
+		case EAddressMode::Block:              // src:dst:len
+		case EAddressMode::ImmZP:              // #:zp    (TST)
+		case EAddressMode::ImmAbs:             // #:abs   (TST)
+		case EAddressMode::ImmZPX:             // #:zp:X  (TST)
+		case EAddressMode::ImmAbsX:            // #:abs:X (TST)
+		case EAddressMode::Implied:
+			return true;
+		default:
+			return false;
+	}*/
+}
+
+// An opcode was just read and an instruction is about to be executed.
+void FPCEEmu::OnInstructionStarted(uint16_t pc, uint8_t opcode)
+{
+	// Is this an opcode we want to track memory reads/writes?
+	/*const bool bTrackAccess = ShouldTrackInstructionMemoryAccess(opcode);
+	if (bTrackAccess)
+	{
+		// todo: Remove this? Not sure we need it.
+		// If we remove it, then remove OnInstructionStarted callback too.
+		pRecentMemoryAccess->SetEnabled(true);
+	}*/
+}
+
+// An instruction has finished.
 // pc is the address of the instruction that just executed.
-void FPCEEmu::OnInstructionExecuted(uint16_t pc)
+void FPCEEmu::OnInstructionFinished(uint16_t pc)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
 
@@ -461,6 +595,9 @@ void FPCEEmu::OnInstructionExecuted(uint16_t pc)
 		// This signals to geargfx to stop exection
 		state.Debugger.Break();
 	}
+
+	// todo: remove this? not sure we need it
+	//pRecentMemoryAccess->SetEnabled(false);
 }
 
 void FPCEEmu::OnIRQ(uint16_t vector, uint16_t interruptedPC, uint16_t routineAddr)
@@ -555,18 +692,8 @@ int16_t FPCEEmu::GetCanonicalBankId(int16_t bankId) const
 	return bankId;
 }
 
-/*const char* FPCEEmu::GetBankName(uint8_t bankIndex) const
-{
-	if (Banks[bankIndex] != nullptr)
-	{
-		const int16_t bankId = Banks[bankIndex]->GetBankId(0);
-		if (const FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId))
-			return pBank->Name.c_str();
-	}
-	return nullptr;
-}*/
-
-static void NullInstructionExecutedCallback(void*, uint16_t) {}
+static void NullInstructionStartedCallback(void*, uint16_t, u8 opcode) {}
+static void NullInstructionFinishedCallback(void*, uint16_t) {}
 static void NullIRQCallback(void*, uint16_t, uint16_t, uint16_t) {}
 static void NullMemoryReadCallback(void*, uint16_t) {}
 static void NullMemoryWriteCallback(void*, uint16_t, uint8_t) {}
@@ -594,16 +721,16 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 {
 	if (bEnabled)
 	{
-		pCore->SetInstructionExecutedCallback(::OnInstructionExecuted, this);
-		pCore->SetIRQCallback(::OnIRQ, this);
+		pCore->SetInstructionExecutedCallback(::OnInstructionFinished, this);
+		pCore->GetHuC6280()->SetCallbacks(::OnIRQ, ::OnInstructionStarted, this);
 		pMemory->SetMemoryCallbacks(OnMemoryRead, OnMemoryWritten, BankChangeCallback, this);
 		pCore->GetHuC6270_1()->SetCallbacks(::OnVRAMWritten, ::OnVRAMRead, ::OnScanlineDraw, ::OnVBlank, this);
 		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullVRAMReadCallback, NullScanlineCallback, NullVBlankCallback, this);
 	}
 	else
 	{
-		pCore->SetInstructionExecutedCallback(NullInstructionExecutedCallback, this);
-		pCore->SetIRQCallback(NullIRQCallback, this);
+		pCore->SetInstructionExecutedCallback(::NullInstructionFinishedCallback, this);
+		pCore->GetHuC6280()->SetCallbacks(NullIRQCallback, NullInstructionStartedCallback, this);
 		pMemory->SetMemoryCallbacks(NullMemoryReadCallback, NullMemoryWriteCallback, NullMprCallback, this);
 		pCore->GetHuC6270_1()->SetCallbacks(NullVRAMWriteCallback, NullVRAMReadCallback, NullScanlineCallback, NullVBlankCallback, this);
 		pCore->GetHuC6270_2()->SetCallbacks(NullVRAMWriteCallback, NullVRAMReadCallback, NullScanlineCallback, NullVBlankCallback, this);
@@ -1001,7 +1128,7 @@ void FPCEEmu::CreateBanks()
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
 		// Creating as machine ROM, so it doesn't get exported by the asm exporter.
-		sprintf(bankName, "HW_PAGE%s", bankPostFix[d].c_str());
+		sprintf(bankName, "HWPAGE%s", bankPostFix[d].c_str());
 		BankSets[kBankHWPage].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pCore->GetMemory()->GetHWPageMemory(), true /*bMachineROM*/, 0x0));
 	}
 
@@ -1016,7 +1143,7 @@ void FPCEEmu::CreateBanks()
 	// Note: pMemory->GetBackupRAMSize() will report 2048 bytes but Geargfx actually has a 8192 bytes buffer.
 	for (int d = 0; d < kNumBankSetIds; d++)
 	{
-		sprintf(bankName, "SAVE_RAM%s", bankPostFix[d].c_str());
+		sprintf(bankName, "SRAM%s", bankPostFix[d].c_str());
 		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 
@@ -1026,7 +1153,7 @@ void FPCEEmu::CreateBanks()
 	{
 		for (int d = 0; d < kNumBankSetIds; d++)
 		{
-			sprintf(bankName, "CD_RAM_%d%s", i, bankPostFix[d].c_str());
+			sprintf(bankName, "CDRAM_%d%s", i, bankPostFix[d].c_str());
 			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
 		}
 	}
@@ -1047,7 +1174,7 @@ void FPCEEmu::CreateBanks()
 		}
 	}
 
-	// Unused banks. One for each mpr slot.
+	// Unmapped/unused banks. One for each mpr slot.
 	for (int d = 0; d < kNumMprSlots; d++)
 	{
 		sprintf(bankName, "UNMAPPED_%02d", d);
@@ -1152,6 +1279,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 
 	pVRAMState = new FVRAMAnalysisState(this);
 	pCDROMAnalyser = new FCDROMAnalyser(this);
+	pRecentMemoryAccess = new FRecentMemoryAccess();
 
 	// This is where we add the viewers we want
 	pPCEViewer = new FPCEViewer(this);
@@ -1170,7 +1298,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	pVRAMViewer = new FVRAMViewer(this);
 	AddViewer(pVRAMViewer);
 	AddViewer(new FMemoryViewer(this));
+	AddViewer(new FZeroPageViewer(this));
 	AddViewer(new FPCEGraphicsViewer(this));
+	AddViewer(new FRecentMemoryAccessViewer(this));
 #if CDROM_SUPPORT
 	pCDROMViewer = new FCDROMViewer(this);
 	AddViewer(pCDROMViewer);
@@ -1365,7 +1495,7 @@ void FPCEEmu::ResetBanks()
 				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[r].GetBankId(d));
 				pBank->Memory = pBankMemory;
 
-				sprintf(bankName, "CARD_RAM_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
+				sprintf(bankName, "CARD_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
 				pBank->Name = bankName;
 			}
 			Banks[r] = &BankSets[r];	
@@ -1399,17 +1529,25 @@ void FPCEEmu::MapMprBanks()
 #endif
 }
 
-void FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
+bool FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 {
 	const int bankIndex = pMemory->GetMpr(mprIndex);
-	Banks[bankIndex]->ClaimSpecificBank(bankId, mprIndex);
+
+	// This can fail if the bank id saved in the project's analysis json is stale relative to
+	// the mpr register value restored from the machine state (e.g. the two files were
+	// saved at different points in time). 
+	if (!Banks[bankIndex]->ClaimSpecificBank(bankId, mprIndex))
+	{
+		LOGERROR("MapBankIdToMprSlot failed: bank id %d not found in bank set %d (mpr slot %d).", bankId, bankIndex, mprIndex);
+		return false;
+	}
 	MprBankSet[mprIndex] = bankIndex;
 
 	FCodeAnalysisBank* pInBank = CodeAnalysis.GetBank(bankId);
 
 	assert(pInBank);
 	if (!pInBank)
-		return;
+		return false;
 
 	FCodeAnalysisState& state = CodeAnalysis;
 
@@ -1419,6 +1557,7 @@ void FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 	state.MapBank(bankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
 	MprBankId[mprIndex] = bankId;
+	return true;
 }
 
 
@@ -1545,6 +1684,10 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
 #endif
 		CodeAnalysis.Config.RomType = ESystemRom::Bios;
+
+#if CDROM_SUPPORT
+		pCDROMAnalyser->Reset();
+#endif
 	}
 	else
 	{
@@ -1828,7 +1971,14 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 	{
 		const auto& mprBankIds = jsonDoc["MprBankIds"];
 		for (int i = 0; i < kNumMprSlots && i < (int)mprBankIds.size(); i++)
-			MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]);
+		{
+			if (!MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]))
+			{
+				// The bank ids saved in the analysis json don't match the machine state we just restored. 
+				SetLastError("Failed to restore mpr bank mapping for slot %d, bank id %d. Project data may be out of sync with the machine state.", i, (int16_t)mprBankIds[i]);
+				return false;
+			}
+		}
 	}
 
 	if (jsonDoc.contains("BankSlotStats"))
@@ -2218,6 +2368,7 @@ void FPCEEmu::ResetProject()
 		pVRAMState->Reset();
 	if (pSpriteViewer)
 		pSpriteViewer->ResetForGame();
+	pRecentMemoryAccess->Reset();
 
 	CodeAnalysis.ViewState[0].Enabled = true;
 
@@ -2277,7 +2428,9 @@ void FPCEEmu::SoftResetMachine()
 
 	if (pVRAMState)
 		pVRAMState->Reset();
-	 
+	
+	pRecentMemoryAccess->Reset();
+
 	memset(pFrameBuffer, 0, kFramebufferSize);
 
 	ResetReferenceInfo(CodeAnalysis, true, true);
@@ -2297,16 +2450,33 @@ void FPCEEmu::SoftResetMachine()
 
 void FPCEEmu::OnEnterEditMode(void)
 {
+	/*
 	pCore->SaveState(nullptr, EditModeBackupStateSize);
 	free(pEditModeBackupState);
 	pEditModeBackupState = (uint8_t*)malloc(EditModeBackupStateSize);
 	pCore->SaveState(pEditModeBackupState, EditModeBackupStateSize);
+	*/
 }
 
 void FPCEEmu::OnExitEditMode(void)
 {
+	// This is disabled in EmuBase because I think there is a bug with it (needs confirmation).
+	// Note from Claude: "This restores raw hardware state (CPU regs, RAM, MPR registers) but never resyncs the analyser-side 
+	// bookkeeping (MprBankId/MprBankSet/FBankSet::SlotBankId) afterward — unlike LoadProject, which 
+	// explicitly does ResetBanks(); MapMprBanks(); right after its own raw-state restore (PCEEmu.cpp:2424-2427)
+	// Spectrum and CPC have the identical gap — zx_load_snapshot/cpc_load_snapshot restore raw state without resyncing their 
+	// own bank caches (CurROMBank/CurRAMBank)."
+
 	if (pEditModeBackupState != nullptr)
+	{
 		pCore->LoadState(pEditModeBackupState, EditModeBackupStateSize);
+		
+		// potential fix:
+		// Resync MprBankId/MprBankSet/FBankSet::SlotBankId to the just-restored
+		// MPR hardware registers — same pairing LoadProject uses after LoadMachineState().
+		/*ResetBanks();
+		MapMprBanks();*/
+	}
 }
 
 

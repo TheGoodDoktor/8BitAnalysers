@@ -92,6 +92,10 @@ public:
 			result["description"] = pFuncInfo->Description;
 			result["address"] = pFuncInfo->StartAddress.GetAddress();
 
+			result["analysis_bank_id"] = pFuncInfo->StartAddress.GetBankId(); // sam. renamed from bank_id: this is the analyser's internal bank index (from CreateBank), NOT a hardware MPR bank number
+			if (const FCodeAnalysisBank* pBank = codeAnalysis.GetBank(pFuncInfo->StartAddress.GetBankId())) // sam
+				result["bank_name"] = pBank->Name; // sam
+
 			// parameters
 			if (pFuncInfo->Params.empty() == false)
 			{
@@ -252,7 +256,7 @@ class FReadMemoryTool : public FMCPTool
 public:
 	FReadMemoryTool()
 	{
-		Description = "Reads memory from specified memory area within a 16-bit address space, the area cannot go beyond 0xFFFF";
+		Description = "Reads physical memory from specified memory area within a 16-bit address space, the area cannot go beyond 0xFFFF";
 
 		InputSchema = {
 			{"type", "object"},
@@ -496,6 +500,9 @@ public:
 		{
 			nlohmann::json result;
 			result["address"] = address.GetAddress();
+			result["analysis_bank_id"] = address.GetBankId(); // sam
+			if (const FCodeAnalysisBank* pBank = codeAnalysis.GetBank(address.GetBankId())) // sam
+				result["bank_name"] = pBank->Name; // sam
 			return result;
 		}
 		return { {"success", false}, {"error", "Label not found"} };
@@ -784,13 +791,21 @@ class FRunUntilPCTool : public FMCPTool
 public:
 	FRunUntilPCTool()
 	{
-		Description = "Run emulator execution until the program counter reaches the specified memory address. Returns immediately with status 'running' — the emulator continues in the background. Poll get_registers until stopped is true, then verify PC matches the target address to confirm the breakpoint was hit rather than the emulator having been stopped for another reason.";
+		Description = "Run emulator execution until the program counter reaches the specified memory address. Returns immediately with status 'running' — the emulator continues in the background. Poll get_registers until stopped is true, then verify PC matches the target address to confirm the breakpoint was hit rather than the emulator having been stopped for another reason. On a banked system, the target address is resolved to a specific (bank, offset) pair — by default using whatever bank is currently mapped at that address when this tool is called, which is unreliable if the target code is reached via a different bank than whatever's mapped in right now. Pass 'analysis_bank_id' to set the breakpoint to the correct bank explicitly, or 'any_bank': true to stop as soon as the raw address is reached in ANY bank (the safest default when you don't know which bank will be mapped in ahead of time).";
 		InputSchema = {
 			{"type", "object"},
 			{"properties", {
 				{"address", {
 					{"type", "integer"},
 					{"description", "Memory address for the PC to stop at within a 16-bit address space"}
+				}},
+				{"analysis_bank_id", {
+					{"type", "integer"},
+					{"description", "Optional analyser-internal bank id (from get_function_info / get_label_address) that 'address' should be resolved in. This is NOT a hardware MPR bank number. If omitted, the bank currently mapped at that address (at the moment this tool is called) is used, which may not match the bank the target code actually runs in. Mutually exclusive with 'any_bank'."}
+				}},
+				{"any_bank", {
+					{"type", "boolean"},
+					{"description", "If true, stop as soon as PC reaches 'address' in ANY bank, ignoring which bank is mapped in. Use this when you don't know (or don't care) which bank the target code will actually be running from. Mutually exclusive with 'analysis_bank_id'."}
 				}}
 			}},
 			{"required", {"address"}}
@@ -806,16 +821,44 @@ public:
 		if (address > 0xFFFF)
 			return { {"error", "Address out of range (must be 0x0000-0xFFFF)"} };
 
+		const bool bAnyBank = arguments.contains("any_bank") && arguments["any_bank"].get<bool>();
+		if (bAnyBank && arguments.contains("analysis_bank_id")) 
+			return { {"error", "'analysis_bank_id' and 'any_bank' are mutually exclusive"} };
+
 		FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
 		FDebugger& debugger = codeAnalysis.Debugger;
-		const FAddressRef targetAddress = codeAnalysis.GetCanonicalAddressRef(address);
+
+		char addressStr[8];
+		snprintf(addressStr, sizeof(addressStr), "$%04X", static_cast<uint16_t>(address));
+
+		if (bAnyBank)
+		{
+			debugger.ContinueToPhysicalAddress(static_cast<uint16_t>(address));
+			return {
+				{"status", "running"},
+				{"target_pc", addressStr},
+				{"any_bank", true},
+				{"stopped", false}
+			};
+		}
+
+		FAddressRef targetAddress;
+		if (arguments.contains("analysis_bank_id"))
+		{
+			const int16_t bankId = static_cast<int16_t>(GetNumericalArgument("analysis_bank_id", arguments));
+			if (codeAnalysis.GetBank(bankId) == nullptr)
+				return { {"error", "Unknown analysis_bank_id"} };
+			targetAddress = FAddressRef(bankId, static_cast<uint16_t>(address));
+		}
+		else
+		{
+			targetAddress = codeAnalysis.GetCanonicalAddressRef(address);
+		}
+
 		if (!targetAddress.IsValid())
 			return { {"error", "Could not resolve address"} };
 
 		debugger.Continue(targetAddress);
-
-		char addressStr[8];
-		snprintf(addressStr, sizeof(addressStr), "$%04X", static_cast<uint16_t>(address));
 
 		return {
 			{"status", "running"},

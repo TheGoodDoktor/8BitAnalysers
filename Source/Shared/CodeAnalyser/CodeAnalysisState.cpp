@@ -113,6 +113,8 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 				FAddressRef ref;
 				fread(&tempU32, sizeof(ref.GetVal()), 1, fp);
 				ref.SetVal(tempU32);
+				if (!ref.IsValid())
+					LOGWARNING("Label %s reference is invalid for page %d addr $%x", pLabelInfo->GetName(), page.PageId, pageAddr); // sam
 				if (pLabelInfo != nullptr)
 					pLabelInfo->References.RegisterAccess(ref);
 			}
@@ -130,6 +132,8 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 				FAddressRef ref;
 				fread(&tempU32, sizeof(ref.GetVal()), 1, fp);
 				ref.SetVal(tempU32);
+				if (!ref.IsValid())
+					LOGWARNING("Read is invalid for page %d addr $%x", page.PageId, pageAddr); // sam
 				dataItem.Reads.RegisterAccess(ref);
 			}
 
@@ -141,12 +145,20 @@ void ReadPageState(FCodeAnalysisPage& page, FILE* fp)
 				FAddressRef ref;
 				fread(&tempU32, sizeof(ref.GetVal()), 1, fp);
 				ref.SetVal(tempU32);
+				if (!ref.IsValid())
+					LOGWARNING("Write is invalid for page %d addr $%x", page.PageId, pageAddr); // sam
 				dataItem.Writes.RegisterAccess(ref);
 			}
 
 			// Last Writer
 			fread(&tempU32, sizeof(dataItem.LastWriter.GetVal()), 1, fp);
 			dataItem.LastWriter.SetVal(tempU32);
+			
+			// sam.
+			// An invalid LastWriter is the normal state for locations that have never been written,
+			// so only warn when a ref that was valid on save fails to resolve.
+			if (!dataItem.LastWriter.IsValid() && tempU32 != FAddressRef::Invalid().GetVal())
+				LOGWARNING("LastWriter is invalid for page %d addr $%x", page.PageId, pageAddr);
 		}
 
 		fread(&itemId, sizeof(itemId), 1, fp);

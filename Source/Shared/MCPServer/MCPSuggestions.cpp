@@ -54,6 +54,26 @@ void ApplySuggestion(FEmuBase* pEmu, const FMCPSuggestion& suggestion)
 	}
 }
 
+// sam
+void AddRationaleAsComment(FEmuBase* pEmu, const FMCPSuggestion& suggestion)
+{
+	if (!suggestion.AddressRef.IsValid() || suggestion.Rationale.empty())
+		return;
+
+	FCodeAnalysisState& codeAnalysis = pEmu->GetCodeAnalysis();
+	FCommentBlock* pCommentBlock = AddCommentBlock(codeAnalysis, suggestion.AddressRef);
+
+	// If a comment block already exists at the address, the rationale is appended
+	// (unless it's already present), rather than overwriting the existing comment.
+
+	if (pCommentBlock->Comment.empty())
+		pCommentBlock->Comment = suggestion.Rationale;
+	else if (pCommentBlock->Comment.find(suggestion.Rationale) == std::string::npos)
+		pCommentBlock->Comment += "\n" + suggestion.Rationale;
+
+	codeAnalysis.SetCodeAnalysisDirty(suggestion.AddressRef);
+}
+
 void FMCPSuggestionQueue::Add(const FMCPSuggestion& suggestion)
 {
 	std::lock_guard<std::mutex> lock(Mutex);

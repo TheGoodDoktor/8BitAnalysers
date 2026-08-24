@@ -31,6 +31,7 @@ struct FEmuDebugStats;
 struct FGameDebugStats;
 struct FAsmExportValidator;
 class FCDROMAnalyser;
+class FRecentMemoryAccess;
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
 {
@@ -94,6 +95,9 @@ public:
 	ICPUEmulator* GetCPUEmulator(void) const override;
 	//ICPUInterface End
 
+	void RegisterDataRead(uint16_t pc, uint16_t dataAddr);
+	void RegisterDataWrite(uint16_t pc, uint16_t dataAddr, uint8_t value);
+
 	bool ExportAsmForCurrentGame();
 
 	void SoftResetMachine();
@@ -114,7 +118,9 @@ public:
 	bool IsCDROM() const;
 	const FCDROMAnalyser* GetCDROMAnalyser() const { return pCDROMAnalyser; }
 
-	void OnInstructionExecuted(uint16_t pc);
+	// Callbacks from geargrafx
+	void OnInstructionStarted(uint16_t pc, uint8_t opcode);
+	void OnInstructionFinished(uint16_t pc/*, uint8_t opcode*/);
 	void OnVRAMWritten(uint16_t vramAddr, uint16_t value);
 	void OnVRAMRead(uint16_t vramAddr, uint16_t value);
 	void OnIRQ(uint16_t vector, uint16_t interruptedPc, uint16_t routineAddr);
@@ -127,6 +133,7 @@ public:
 	FVRAMViewer* GetVRAMViewer() const { return pVRAMViewer; }
 	FBatchGameLoadViewer* GetBatchGameLoadViewer() const { return pBatchGameLoadViewer;	}
 	FVRAMAnalysisState* GetVRAMAnalysisState() const { return pVRAMState; }
+	FRecentMemoryAccess* GetRecentMemAccess() const { return pRecentMemoryAccess; }
 
 	void EnableGeargrafxCallbacks(bool bEnabled);
 
@@ -179,7 +186,7 @@ protected:
 	void MapMprBanks();
 	int16_t GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
 	
-	void MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
+	bool MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
 
 	void BuildCanonicalBankIdLookup();
 	void BuildBankSetLookup();
@@ -203,6 +210,7 @@ protected:
 	FVRAMAnalysisState* pVRAMState = nullptr;
 	FCDROMAnalyser* pCDROMAnalyser = nullptr;
 	FPCECPUEmulator6502* pPCE6502CPU;
+	FRecentMemoryAccess* pRecentMemoryAccess = nullptr;
 
 	FPCEViewer* pPCEViewer = nullptr;
 	FBatchGameLoadViewer* pBatchGameLoadViewer = nullptr;

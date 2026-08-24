@@ -9,24 +9,34 @@ FCDROMAnalyser::FCDROMAnalyser(FPCEEmu* pEmu)
 {
 }
 
-void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
+void FCDROMAnalyser::Reset()
 {
-	CdRomMedia* pMedia = pPCEEmu->GetCore()->GetCDROMMedia();
+	FirstDataTrackLBA = kInvalidLBA;
 
+	if (!pPCEEmu->IsCDROM())
+		return;
+
+	// Cache the first data track LBA (sector).
 	// The BIOS sector number is relative to the first data track, not an absolute disc LBA.
-	// Find the first data track's start LBA so we can convert to absolute.
-	const auto& tracks = pMedia->GetTracks();
+	// Find the first data track's start LBA so we can convert to absolute when a read happens.
+	const auto& tracks = pPCEEmu->GetCore()->GetCDROMMedia()->GetTracks();
 	uint32_t firstDataTrackLBA = 0;
 	for (const auto& track : tracks)
 	{
 		if (track.type != GG_CDROM_AUDIO_TRACK)
 		{
-			firstDataTrackLBA = track.start_lba;
-			break;
+			FirstDataTrackLBA = track.start_lba;
+			return;
 		}
 	}
+}
 
-	const uint32_t absoluteLBA = (args.CDByteOffset / 2048) + firstDataTrackLBA;
+void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
+{
+	assert(FirstDataTrackLBA != kInvalidLBA);
+
+	CdRomMedia* pMedia = pPCEEmu->GetCore()->GetCDROMMedia();
+	const uint32_t absoluteLBA = (args.CDByteOffset / 2048) + FirstDataTrackLBA;
 	const s32 trackIndex = pMedia->GetTrackFromLBA(absoluteLBA);
 	if (trackIndex < 0)
 		return;
@@ -66,12 +76,12 @@ const uint16_t _bx = zipBaseAddr + 0xFA;
 
 bool GetBiosCDReadArgs(FPCEEmu* pEmu, FBiosCDReadArgs& args)
 {
-	const uint8_t mode = pEmu->ReadByte(_dh);
-	uint32_t numToRead = pEmu->ReadByte(_al);
+	const uint8_t mode = pEmu->ReadByte(_dh); // $ff
+	uint32_t numToRead = pEmu->ReadByte(_al); // $f8
 
-	const uint8_t clByte = pEmu->ReadByte(_cl);
-	const uint8_t chByte = pEmu->ReadByte(_ch);
-	const uint8_t dlByte = pEmu->ReadByte(_dl);
+	const uint8_t clByte = pEmu->ReadByte(_cl); // $fc
+	const uint8_t chByte = pEmu->ReadByte(_ch); // $fd
+	const uint8_t dlByte = pEmu->ReadByte(_dl); // $fe
 	args.CDByteOffset =  (dlByte + (chByte << 8) + (clByte << 16)) * 2048;
 
 	switch (mode)
