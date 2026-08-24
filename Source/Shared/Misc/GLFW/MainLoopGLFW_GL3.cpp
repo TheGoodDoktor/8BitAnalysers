@@ -34,7 +34,6 @@
 #include <stdexcept>
 
 void WindowFocusCallback(GLFWwindow* window, int focused);
-void WindowCloseCallback(GLFWwindow* window);
 
 struct FAppState
 {
@@ -150,7 +149,6 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
     glfwSwapInterval(1); // Enable vsync
 
 	glfwSetWindowFocusCallback(appState.MainWindow, WindowFocusCallback);
-	glfwSetWindowCloseCallback(appState.MainWindow, WindowCloseCallback);
 
     // Setup audio
     saudio_desc audioDesc = {};
@@ -216,7 +214,7 @@ int RunMainLoop(FEmuBase* pEmulator, const FEmulatorLaunchConfig& launchConfig)
     bool bLastDefaultFont = pEmulator->GetCodeAnalysis().pGlobalConfig->bBuiltInFont;
 
     // Main loop
-    while (!glfwWindowShouldClose(appState.MainWindow) && !pEmulator->IsQuitConfirmed())
+    while (!glfwWindowShouldClose(appState.MainWindow))
     {
         OPTICK_FRAME("MainThread");
 
@@ -314,19 +312,6 @@ void WindowFocusCallback(GLFWwindow* window, int focused)
 	if (g_AppState.pEmulator)
 	{
 		g_AppState.pEmulator->AppFocusCallback(focused);
-	}
-}
-
-void WindowCloseCallback(GLFWwindow* window)
-{
-	if (!g_AppState.pEmulator)
-		return;
-
-	const FGlobalConfig* pConfig = g_AppState.pEmulator->GetGlobalConfig();
-	if (pConfig && pConfig->bConfirmOnQuit && g_AppState.pEmulator->HasProjectLoaded())
-	{
-		glfwSetWindowShouldClose(window, GLFW_FALSE);
-		g_AppState.pEmulator->RequestQuit();
 	}
 }
 

@@ -510,7 +510,6 @@ void FEmuBase::OptionsMenu()
 	}
 	//if(pActiveGame!=nullptr)
 	//	ImGui::MenuItem("Save Snapshot with game", 0, &pActiveGame->pConfig->WriteSnapshot);
-	ImGui::MenuItem("Confirm Quit", 0, &CodeAnalysis.pGlobalConfig->bConfirmOnQuit);
 
 #ifndef NDEBUG
 	ImGui::MenuItem("Show Config", 0, &CodeAnalysis.Config.bShowConfigWindow);
@@ -691,7 +690,6 @@ void FEmuBase::DrawMainMenu()
 	DrawReplaceGameModalPopup();
 	DrawErrorMessageModalPopup();
 	DrawEditGlobalConfigModalPopup();
-	DrawQuitConfirmPopup();
 }
 
 void FEmuBase::DrawEditGlobalConfigModalPopup()
@@ -1132,43 +1130,6 @@ void FEmuBase::DrawErrorMessageModalPopup()
 			LastError = "";
 		}
 		
-		ImGui::EndPopup();
-	}
-}
-
-void FEmuBase::DrawQuitConfirmPopup()
-{
-	if (bQuitRequested)
-	{
-		ImGui::OpenPopup("Quit?");
-		bQuitRequested = false;
-	}
-
-	if (ImGui::BeginPopupModal("Quit?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		assert(pCurrentProjectConfig);
-		ImGui::Text("Save project '%s' before quitting?", pCurrentProjectConfig->Name.c_str());
-		ImGui::Separator();
-
-		const float buttonWidth = ImGui_GetFontCharWidth() * 14.f;
-		if (ImGui::Button("Save & Quit", ImVec2(buttonWidth, 0)))
-		{
-			SaveProject();
-			bSaveOnShutdown = true;
-			bQuitConfirmed = true;
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Quit", ImVec2(buttonWidth, 0)))
-		{
-			bSaveOnShutdown = false;
-			bQuitConfirmed = true;
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape))
-			ImGui::CloseCurrentPopup();
-
 		ImGui::EndPopup();
 	}
 }

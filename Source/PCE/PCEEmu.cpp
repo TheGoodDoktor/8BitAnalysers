@@ -1567,8 +1567,12 @@ void FPCEEmu::Shutdown()
 	{
 		// Save Global Config - move to function?
 		pGlobalConfig->LastGame = pCurrentProjectConfig->Name;
-		if (bSaveOnShutdown)
-			SaveProject();
+		SaveProject();
+	}
+	else
+	{
+		// Is this the right thing to do?
+		pGlobalConfig->LastGame = "";
 	}
 
 	pGlobalConfig->Save(kGlobalConfigFilename);
