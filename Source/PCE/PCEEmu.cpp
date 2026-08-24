@@ -421,9 +421,7 @@ static void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 
 		return;
 	}
 
-	const int bankSetIndex = pEmu->MprBankSet[mprIndex];
-	if (bankSetIndex != -1)
-		pEmu->Banks[bankSetIndex]->SetBankFreed(mprIndex);
+	pEmu->FreeMprSlotBank(mprIndex);
 
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
@@ -954,18 +952,55 @@ int16_t FPCEEmu::GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex)
 	if (Banks[bankIndex] == nullptr)
 		return -1;
 
+	// Try the set's own banks first: the primary, or a still-attached pool bank from a previous
+	// duplicate mapping, which remounts with its analysis state intact.
 	int16_t freeBank = Banks[bankIndex]->GetFreeBank(mprIndex);
+
+	// The set needs another bank to represent a duplicate mapping - borrow one from the pool.
+	if (freeBank == -1)
+		freeBank = ClaimDupeBankForSet(Banks[bankIndex], mprIndex);
+
 	if (freeBank != -1)
 	{
 		MprBankSet[mprIndex] = bankIndex;
 		return freeBank;
 	}
 
-	// If we couldnt find a free bank return an unused bank
+	// If we couldnt find a free bank return an unused bank.
+	LOGERROR("Could not get bank id for mpr slot %d. Returning unused bank.", mprIndex);
+
 	freeBank = Banks[kBankUnusedStart]->GetFreeBank(mprIndex);
 	MprBankSet[mprIndex] = kBankUnusedStart;
 	assert(freeBank != -1);
 	return freeBank;
+}
+
+// Borrow a pool bank so the set can be mapped into an additional mpr slot.
+// Returns the bank id of the bank it claimed.
+int16_t FPCEEmu::ClaimDupeBankForSet(FBankSet* pBankSet, uint8_t mprIndex)
+{
+	const int16_t bankId = DupeBankPool.BindBankToSet(CodeAnalysis, pBankSet);
+	if (bankId == -1)
+		return -1;
+
+	// The pool bank now represents this set's logical bank.
+	CanonicalBankIdLookup[bankId] = pBankSet->GetBankId();
+	BankSetLookup[bankId] = pBankSet;
+
+	if (!pBankSet->ClaimSpecificBank(bankId, mprIndex))
+		return -1;
+
+	return bankId;
+}
+
+void FPCEEmu::FreeMprSlotBank(uint8_t mprIndex)
+{
+	const int bankSetIndex = MprBankSet[mprIndex];
+	if (bankSetIndex != -1)
+	{
+		const int16_t freedBankId = Banks[bankSetIndex]->SetBankFreed(mprIndex);
+		DupeBankPool.OnBankReleased(freedBankId);	// no-op for non-pool banks
+	}
 }
 
 void FPCEEmu::CheckDupeMprBankIds()
@@ -1118,44 +1153,31 @@ void EventShowBankAddressChange(FCodeAnalysisState& state, const FEvent& event)
 
 void FPCEEmu::CreateBanks()
 {
-	std::string bankPostFix[8] = { "", "_2", "_3", "_4", "_5", "_6", "_7", "_8" };
 	char bankName[32];
+
+	// Each bank set gets a single primary bank. Duplicate mappings borrow banks from the
+	// dupe bank pool, which is created after the primaries so all bank ids stay deterministic.
 
 	// Hardware page. (IO)
 	// This is a bit of a hack. We use memory owned by Geargfx.
 	// We write values to it every time a hw page location is read or written to.
 	// To the user, it should look like a normal memory location in the code analysis view.
-	for (int d = 0; d < kNumBankSetIds; d++)
-	{
-		// Creating as machine ROM, so it doesn't get exported by the asm exporter.
-		sprintf(bankName, "HWPAGE%s", bankPostFix[d].c_str());
-		BankSets[kBankHWPage].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pCore->GetMemory()->GetHWPageMemory(), true /*bMachineROM*/, 0x0));
-	}
+	// Creating as machine ROM, so it doesn't get exported by the asm exporter.
+	BankSets[kBankHWPage].AddFixedBankId(CodeAnalysis.CreateBank("HWPAGE", 8, pCore->GetMemory()->GetHWPageMemory(), true /*bMachineROM*/, 0x0));
 
 	// Working RAM
-	for (int d = 0; d < kNumBankSetIds; d++)
-	{
-		sprintf(bankName, "WRAM%s", bankPostFix[d].c_str());
-		BankSets[kBankWRAM0].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000));
-	}
+	BankSets[kBankWRAM0].AddFixedBankId(CodeAnalysis.CreateBank("WRAM", 8, pMemory->GetWorkingRAM(), false /*bMachineROM*/, 0x2000));
 
 	// Save RAM.
 	// Note: pMemory->GetBackupRAMSize() will report 2048 bytes but Geargfx actually has a 8192 bytes buffer.
-	for (int d = 0; d < kNumBankSetIds; d++)
-	{
-		sprintf(bankName, "SRAM%s", bankPostFix[d].c_str());
-		BankSets[kBankSaveRAM].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
-	}
+	BankSets[kBankSaveRAM].AddFixedBankId(CodeAnalysis.CreateBank("SRAM", 8, pMemory->GetBackupRAM(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 
 	// CD ROM RAM
 	u8* pUnusedMem = pMemory->GetUnusedMemory();
 	for (int i = 0, b = kBankCdRomRamStart; i < kNumCdRomRamBanks; i++, b++)
 	{
-		for (int d = 0; d < kNumBankSetIds; d++)
-		{
-			sprintf(bankName, "CDRAM_%d%s", i, bankPostFix[d].c_str());
-			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
-		}
+		sprintf(bankName, "CDRAM_%d", i);
+		BankSets[b].AddFixedBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 
 	// move this to reset banks?
@@ -1167,18 +1189,18 @@ void FPCEEmu::CreateBanks()
 	// The real memory gets set later after the game gets loaded. 
 	for (int b = 0; b < kNumRomBanks; b++)
 	{
-		for (int d = 0; d < kNumBankSetIds; d++)
-		{
-			sprintf(bankName, "ROM_%03d%s", b, bankPostFix[d].c_str());
-			BankSets[b].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
-		}
+		sprintf(bankName, "ROM_%03d", b);
+		BankSets[b].AddFixedBankId(CodeAnalysis.CreateBank(bankName, 8, pUnusedMem, false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
+
+	// Shared pool of banks for duplicate mappings.
+	DupeBankPool.Create(CodeAnalysis, pUnusedMem, kDefaultInitialBankAddr);
 
 	// Unmapped/unused banks. One for each mpr slot.
 	for (int d = 0; d < kNumMprSlots; d++)
 	{
 		sprintf(bankName, "UNMAPPED_%02d", d);
-		BankSets[kBankUnusedStart].AddBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
+		BankSets[kBankUnusedStart].AddFixedBankId(CodeAnalysis.CreateBank(bankName, 8, pMemory->GetUnusedMemory(), false /*bMachineROM*/, kDefaultInitialBankAddr));
 	}
 }
 
@@ -1385,6 +1407,16 @@ void FPCEEmu::ResetBanks()
 		Banks[bankNo] = &BankSets[kBankUnusedStart];
 	}
 
+	// Drop the dupe pool bindings. Must happen after the bank set Reset() loop above - see FDupeBankPool::Reset().
+	// Also reset the pool banks' lookup entries, which get set dynamically as pool banks are bound.
+	DupeBankPool.Reset(CodeAnalysis, pMemory->GetUnusedMemory());
+	for (int i = 0; i < FDupeBankPool::kNumPoolBanks; i++)
+	{
+		const int16_t poolBankId = DupeBankPool.GetBankIdByIndex(i);
+		CanonicalBankIdLookup[poolBankId] = poolBankId;
+		BankSetLookup[poolBankId] = nullptr;
+	}
+
 	if (pMemory->IsBackupRamEnabled())
 	{
 		Banks[kBankSaveRAM] = &BankSets[kBankSaveRAM];
@@ -1436,7 +1468,6 @@ void FPCEEmu::ResetBanks()
 	BankSets[kBankWRAM0].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 	BankSets[kBankSaveRAM].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
-	std::string bankPostFix[8] = { "", "_2", "_3", "_4", "_5", "_6", "_7", "_8" };
 	char bankName[32];
 
 	// Patch in the rom memory into the rom banks and set their primary mapped page.
@@ -1446,16 +1477,17 @@ void FPCEEmu::ResetBanks()
 
 		uint8_t* pBytes = bIsCdRom ? pMedia->GetSysCardBios() : pMedia->GetROM();
 		uint8_t* pBankMemory = pBytes + b * 0x2000;
-		for (int d = 0; d < kNumBankSetIds; d++)
-		{
-			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId(d));
-			pBank->Memory = pBankMemory;
+		FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId());
+		pBank->Memory = pBankMemory;
 
-			sprintf(bankName, "%s_%02d%s", bIsCdRom ? "BIOS" : "ROM", b, bankPostFix[d].c_str());
-			pBank->Name = bankName;
+		if (bIsCdRom)
+			sprintf(bankName, "%s_%02d", "BIOS", b);
+		else
+			sprintf(bankName, "%s_%03d", "ROM", b);
 
-			pBank->bMachineROM = bIsCdRom;
-		}
+		pBank->Name = bankName;
+
+		pBank->bMachineROM = bIsCdRom;
 	}
 
 	if (bIsCdRom)
@@ -1468,11 +1500,8 @@ void FPCEEmu::ResetBanks()
 
 			BankSets[b].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
-			for (int d = 0; d < kNumBankSetIds; d++)
-			{
-				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId(d));
-				pBank->Memory = pBankMemory;
-			}
+			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[b].GetBankId());
+			pBank->Memory = pBankMemory;
 		}
 	}
 
@@ -1490,15 +1519,13 @@ void FPCEEmu::ResetBanks()
 
 			BankSets[r].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
 
-			for (int d = 0; d < kNumBankSetIds; d++)
-			{
-				FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[r].GetBankId(d));
-				pBank->Memory = pBankMemory;
+			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(BankSets[r].GetBankId());
+			pBank->Memory = pBankMemory;
 
-				sprintf(bankName, "CARD_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
-				pBank->Name = bankName;
-			}
-			Banks[r] = &BankSets[r];	
+			sprintf(bankName, "CARD_%02d", r - cardRamStart);
+			pBank->Name = bankName;
+
+			Banks[r] = &BankSets[r];
 		}
 
 		BANK_LOG("Num card RAM banks = %d.", (cardRamEnd - cardRamStart) + 1);
@@ -1533,9 +1560,21 @@ bool FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 {
 	const int bankIndex = pMemory->GetMpr(mprIndex);
 
+	// If the saved mapping used a pool bank for a duplicate mapping, rebind that same pool bank
+	// to this slot's bank set before claiming it. Pool bank ids are deterministic so ids saved
+	// in the project stay valid across sessions.
+	if (DupeBankPool.IsPoolBank(bankId))
+	{
+		if (DupeBankPool.BindSpecificBankToSet(CodeAnalysis, bankId, Banks[bankIndex]))
+		{
+			CanonicalBankIdLookup[bankId] = Banks[bankIndex]->GetBankId();
+			BankSetLookup[bankId] = Banks[bankIndex];
+		}
+	}
+
 	// This can fail if the bank id saved in the project's analysis json is stale relative to
 	// the mpr register value restored from the machine state (e.g. the two files were
-	// saved at different points in time). 
+	// saved at different points in time).
 	if (!Banks[bankIndex]->ClaimSpecificBank(bankId, mprIndex))
 	{
 		LOGERROR("MapBankIdToMprSlot failed: bank id %d not found in bank set %d (mpr slot %d).", bankId, bankIndex, mprIndex);
@@ -1878,8 +1917,7 @@ static void AddVectorFunctionLabel(FCodeAnalysisState& state, FCodeAnalysisBank*
 
 void FPCEEmu::AddInterruptVectorFunctionLabels(int16_t bankId)
 {
-	// todo deal with non canonical banks.
-	// call GetCanonicalBankId() before calling?
+	bankId = GetCanonicalBankId(bankId);
 
 	if (IsUnusedBank(bankId))
 		return;

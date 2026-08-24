@@ -434,7 +434,7 @@ public:
 	static const int kPageMask = 1023;
 	static const int kNoPagesInAddressSpace = kAddressSize / FCodeAnalysisPage::kPageSize;
 
-	static const int kMaxBanks = 1024;
+	static const int kMaxBanks = 512;
 	static int16_t BankCount;
 
 	FCodeAnalysisState();

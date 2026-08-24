@@ -149,6 +149,7 @@ public:
 
 	int GetBankCount() const;
 	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);
+	void FreeMprSlotBank(uint8_t mprIndex);
 
 	static constexpr int kNumBanks = 256;
 	static constexpr int kNumRomBanks = 128;
@@ -185,7 +186,8 @@ protected:
 	void ResetBanks();
 	void MapMprBanks();
 	int16_t GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
-	
+	int16_t ClaimDupeBankForSet(FBankSet* pBankSet, uint8_t mprIndex);
+
 	bool MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
 
 	void BuildCanonicalBankIdLookup();
@@ -226,8 +228,12 @@ protected:
 
 	FBankSet BankSets[kNumBanks];
 
+	// Shared pool of banks used to represent duplicate mappings.
+	FDupeBankPool DupeBankPool;
+
 	// Fast lookup: maps each bankId to its canonical (primary) bankId.
-	// Built once after all banks are created. Indexed directly by bankId.
+	// Built after all banks are created. Entries for pool banks are updated
+	// dynamically as they get bound to bank sets. Indexed directly by bankId.
 	int16_t CanonicalBankIdLookup[FCodeAnalysisState::kMaxBanks];
 	
 	// Fast lookup to go from bankid to bankset

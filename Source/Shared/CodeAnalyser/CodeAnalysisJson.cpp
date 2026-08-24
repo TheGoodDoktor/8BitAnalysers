@@ -45,6 +45,11 @@ bool ExportAnalysisJson(FCodeAnalysisState& state, const char* pJsonFileName, bo
 		if (bank.PrimaryMappedPage == -1)
 			continue;
 
+		// Don't serialise non-canonical (dupe) banks. Nothing persistent is allowed to reference them.
+		// Platforms without dupe banks treat every bank as canonical.
+		if (!state.IsBankIdCanonical(bank.Id))
+			continue;
+
 		json bankJson;
 		bankJson["Id"] = bank.Id;
 		bankJson["Description"] = bank.Description;
