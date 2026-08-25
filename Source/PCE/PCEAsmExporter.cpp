@@ -254,7 +254,7 @@ public:
 
 		// todo: output which slots/addresses this bank has been mapped to
 		FPCEEmu* pPCEEmu = static_cast<FPCEEmu*>(pEmulator);
-		const uint8_t bankIndex = pPCEEmu->GetBankIndexForBankId(pBank->Id);
+		const uint8_t bankIndex = pPCEEmu->GetHwBankIndex(pBank->Id);
 		if (!pBank->bEverBeenMapped)
 			Output("\t; Note: this bank has never been mapped so the correct org address is unknown.\n", bankIndex);
 		Output("\t.bank %d\n", bankIndex);

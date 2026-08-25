@@ -201,10 +201,10 @@ public:
 		const uint32_t offset  = GetNumericalArgument("offset",   arguments);
 		const uint32_t length  = GetNumericalArgument("length",   arguments);
 
-		if (mprBank >= FPCEEmu::kNumBanks)
+		if (mprBank >= FPCEEmu::kNumHwBanks)
 			return { {"error", "mpr_bank out of range (0x00-0xFF)"} };
 
-		const FBankSet* pBankSet = pPCEEmu->Banks[mprBank];
+		const FBankSet* pBankSet = pPCEEmu->BankSetPtrs[mprBank];
 		if (!pBankSet)
 			return { {"error", "No bank set for this MPR bank number"} };
 
