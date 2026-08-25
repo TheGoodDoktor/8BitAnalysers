@@ -166,6 +166,7 @@ class FReadBankByMprTool : public FMCPTool
 public:
 	FReadBankByMprTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
 	{
+		// todo improve description
 		Description = "Reads bytes from a bank identified by its MPR bank number (0x00-0xFF). Works regardless of whether the bank is currently mapped. ROM banks are 0x00-0x7F, work RAM is 0xF8, hardware page is 0xFF.";
 		InputSchema = {
 			{"type", "object"},
@@ -224,7 +225,7 @@ class FResetEmulatorTool : public FMCPTool
 public:
 	FResetEmulatorTool(FPCEEmu* pEmu) : pPCEEmu(pEmu)
 	{
-		Description = "Resets the emulated PC Engine to its startup state, equivalent to pressing the Reset button. Useful to return to the title screen or to re-run game startup code from the entry point.";
+		Description = "Resets the emulated PC Engine to its startup state, equivalent to pressing the Reset button. Useful to return to the title screen or to re-run game startup code from the entry point. Does not reset the code analysis state. Preserves labels, functions, comments etc.";
 		InputSchema = {
 			{"type", "object"},
 			{"properties", nlohmann::json::object()},
