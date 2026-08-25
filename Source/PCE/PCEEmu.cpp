@@ -423,7 +423,7 @@ static void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 
 
 	const int bankSetIndex = pEmu->MprBankSet[mprIndex];
 	if (bankSetIndex != -1)
-		pEmu->Banks[bankSetIndex]->SetBankFreed(mprIndex);
+		pEmu->BankSetPtrs[bankSetIndex]->SetBankFreed(mprIndex);
 
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
@@ -619,11 +619,11 @@ bool FPCEEmu::IsUnusedBank(int16_t bankId) const
 
 // Bear in mind bankIds can be in multiple bank slots.
 // This will return the lowest bank index that matches the bankId.
-uint8_t FPCEEmu::GetBankIndexForBankId(uint16_t bankId)
+uint8_t FPCEEmu::GetHwBankIndex(uint16_t bankId)
 {
-	for (int i = 0; i < kNumBanks; i++)
+	for (int i = 0; i < kNumHwBanks; i++)
 	{
-		if (Banks[i]->GetBankId() == bankId)
+		if (BankSetPtrs[i]->GetBankId() == bankId)
 		{
 			const Memory::MemoryBankType bankType = pMemory->GetBankType(i);
 			if (bankType == Memory::MEMORY_BANK_TYPE_ROM || bankType == Memory::MEMORY_BANK_TYPE_BIOS)
@@ -645,7 +645,7 @@ void FPCEEmu::BuildCanonicalBankIdLookup()
 		CanonicalBankIdLookup[i] = (int16_t)i;
 
 	// Overwrite entries for duplicate bankIds with their primary bankId.
-	for (int i = 0; i < kNumBanks; i++)
+	for (int i = 0; i < kNumHwBanks; i++)
 	{
 		const FBankSet& bankSet = BankSets[i];
 
@@ -674,7 +674,7 @@ void FPCEEmu::BuildBankSetLookup()
 	for (int i = 0; i < FCodeAnalysisState::kMaxBanks; i++)
 		BankSetLookup[i] = nullptr;
 
-	for (int i = 0; i < kNumBanks; i++)
+	for (int i = 0; i < kNumHwBanks; i++)
 	{
 		FBankSet& bankSet = BankSets[i];
 		for (const FBankSet::FBankSetEntry& entry : bankSet.Banks)
@@ -742,7 +742,7 @@ const FBankSet& FPCEEmu::GetBankSet(int index)
 	return BankSets[index];
 }
 
-int FPCEEmu::GetBankCount() const
+int FPCEEmu::GetGameBankCount() const
 {
 	// todo cache this?
 	const bool bIsCdRom = pMedia->IsCDROM();
@@ -786,8 +786,8 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	pInBank->PrimaryMappedPage = pageNo;
 	MprBankId[mprIndex] = newBankId;
 
-	const bool bFirstTimeInThisSlot = !(Banks[newBankIndex]->MappedSlotsMask & (1 << mprIndex));
-	Banks[newBankIndex]->RecordSlotMapping(mprIndex);
+	const bool bFirstTimeInThisSlot = !(BankSetPtrs[newBankIndex]->MappedSlotsMask & (1 << mprIndex));
+	BankSetPtrs[newBankIndex]->RecordSlotMapping(mprIndex);
 
 	// Case 1: first time this bank is in this slot — check if any current vectors point into it.
 	// Requires slot 7 to already be mapped so the vector reads are valid.
@@ -949,20 +949,21 @@ void FPCEEmu::MapMprBank(uint8_t mprIndex, uint8_t newBankIndex)
 	//state.SetAddressRangeDirty();
 }
 
-int16_t FPCEEmu::GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex)
+// Get a BankId for a specific hw bank [0-255] in an mpr slot [0-7].
+int16_t FPCEEmu::GetBankIdForMprSlot(uint8_t hwBankIndex, uint8_t mprIndex)
 {
-	if (Banks[bankIndex] == nullptr)
+	if (BankSetPtrs[hwBankIndex] == nullptr)
 		return -1;
 
-	int16_t freeBank = Banks[bankIndex]->GetFreeBank(mprIndex);
+	int16_t freeBank = BankSetPtrs[hwBankIndex]->GetFreeBank(mprIndex);
 	if (freeBank != -1)
 	{
-		MprBankSet[mprIndex] = bankIndex;
+		MprBankSet[mprIndex] = hwBankIndex;
 		return freeBank;
 	}
 
 	// If we couldnt find a free bank return an unused bank
-	freeBank = Banks[kBankUnusedStart]->GetFreeBank(mprIndex);
+	freeBank = BankSetPtrs[kBankUnusedStart]->GetFreeBank(mprIndex);
 	MprBankSet[mprIndex] = kBankUnusedStart;
 	assert(freeBank != -1);
 	return freeBank;
@@ -1033,7 +1034,7 @@ void FPCEEmu::UpdateDebugStats()
 		std::set<uint16_t> bankIdsPreviouslyMapped;
 		for (int i = 0; i < kBankCdRomRamStart; i++)
 		{
-			const int16_t bankId = Banks[i]->GetBankId(0);
+			const int16_t bankId = BankSetPtrs[i]->GetBankId(0);
 			if (FCodeAnalysisBank* pBank = state.GetBank(bankId))
 			{
 				if (pBank->bEverBeenMapped)
@@ -1051,7 +1052,7 @@ void FPCEEmu::UpdateDebugStats()
 		// Keep track of number of non canonical banks that have labels and code.
 		int nonCanonicalBanksWithLabels = 0;
 		int nonCanonicalBanksWithCodeItems = 0;
-		for (int i = 0; i < FPCEEmu::kNumBanks; i++)
+		for (int i = 0; i < FPCEEmu::kNumHwBanks; i++)
 		{
 			const FBankSet& bankSet = BankSets[i];
 			if (bankSet.Banks.empty())
@@ -1160,8 +1161,8 @@ void FPCEEmu::CreateBanks()
 
 	// move this to reset banks?
 	// do I need this any more?
-	for (int d = kBankUnusedStart; d < kNumBanks; d++)
-		Banks[d] = &BankSets[kBankUnusedStart];
+	for (int d = kBankUnusedStart; d < kNumHwBanks; d++)
+		BankSetPtrs[d] = &BankSets[kBankUnusedStart];
 
 	// ROMs. Create with unused ram initially because the rom memory doesn't exist yet. 
 	// The real memory gets set later after the game gets loaded. 
@@ -1370,7 +1371,7 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 void FPCEEmu::ResetBanks()
 {
 	const bool bIsCdRom = pMedia->IsCDROM();
-	const int romBankCount = GetBankCount();
+	const int romBankCount = GetGameBankCount();
 
 #if BANK_SWITCH_DEBUG
 	const int romSize = bIsCdRom ? GG_BIOS_SYSCARD_SIZE : pMedia->GetROMSize();
@@ -1381,28 +1382,28 @@ void FPCEEmu::ResetBanks()
 		BANK_LOG("Rom size is %d bytes (%d Kb). Bank count is %d", romSize, romSize / 1024, romBankCount);
 #endif
 
-	for (int bankNo = 0; bankNo < kNumBanks; bankNo++)
+	for (int bankNo = 0; bankNo < kNumHwBanks; bankNo++)
 	{
 		BankSets[bankNo].Reset();
-		Banks[bankNo] = &BankSets[kBankUnusedStart];
+		BankSetPtrs[bankNo] = &BankSets[kBankUnusedStart];
 	}
 
 	if (pMemory->IsBackupRamEnabled())
 	{
-		Banks[kBankSaveRAM] = &BankSets[kBankSaveRAM];
+		BankSetPtrs[kBankSaveRAM] = &BankSets[kBankSaveRAM];
 	}
 	
-	Banks[kBankHWPage] = &BankSets[kBankHWPage];
-	Banks[kBankWRAM0] = &BankSets[kBankWRAM0];
-	Banks[kBankWRAM1] = &BankSets[kBankWRAM0];
-	Banks[kBankWRAM2] = &BankSets[kBankWRAM0];
-	Banks[kBankWRAM3] = &BankSets[kBankWRAM0];
+	BankSetPtrs[kBankHWPage] = &BankSets[kBankHWPage];
+	BankSetPtrs[kBankWRAM0] = &BankSets[kBankWRAM0];
+	BankSetPtrs[kBankWRAM1] = &BankSets[kBankWRAM0];
+	BankSetPtrs[kBankWRAM2] = &BankSets[kBankWRAM0];
+	BankSetPtrs[kBankWRAM3] = &BankSets[kBankWRAM0];
 
 	// Set initial rom banks.
 	for (int bankNo = 0; bankNo < 128; bankNo++)
 	{
 		const int bankIndex = romBankCount ? pCore->GetMedia()->GetRomBankIndex(bankNo) : bankNo;
-		Banks[bankNo] = &BankSets[bankIndex];
+		BankSetPtrs[bankNo] = &BankSets[bankIndex];
 	}
 
 	// Unmap the banks from the mpr slots.
@@ -1465,7 +1466,7 @@ void FPCEEmu::ResetBanks()
 		// Set cd rom ram banks
 		for (int i = 0, b = kBankCdRomRamStart; i < kNumCdRomRamBanks; i++, b++)
 		{
-			Banks[b] = &BankSets[b];
+			BankSetPtrs[b] = &BankSets[b];
 			uint8_t* pBankMemory = pMemory->GetCDROMRAM() + i * 0x2000;
 
 			BankSets[b].SetPrimaryMappedPage(CodeAnalysis, 0, kDefaultPrimaryMappedPage);
@@ -1478,7 +1479,7 @@ void FPCEEmu::ResetBanks()
 		}
 	}
 
-	int cardRAMSize = pMemory->GetCardRAMSize();
+	const int cardRAMSize = pMemory->GetCardRAMSize();
 	if (cardRAMSize)
 	{
 		BANK_LOG("Card RAM size is %d bytes (%d kb).", cardRAMSize, cardRAMSize / 1024);
@@ -1500,7 +1501,7 @@ void FPCEEmu::ResetBanks()
 				sprintf(bankName, "CARD_%02d%s", r - cardRamStart, bankPostFix[d].c_str());
 				pBank->Name = bankName;
 			}
-			Banks[r] = &BankSets[r];	
+			BankSetPtrs[r] = &BankSets[r];	
 		}
 
 		BANK_LOG("Num card RAM banks = %d.", (cardRamEnd - cardRamStart) + 1);
@@ -1533,17 +1534,17 @@ void FPCEEmu::MapMprBanks()
 
 bool FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 {
-	const int bankIndex = pMemory->GetMpr(mprIndex);
+	const int hwBankIndex = pMemory->GetMpr(mprIndex);
 
 	// This can fail if the bank id saved in the project's analysis json is stale relative to
 	// the mpr register value restored from the machine state (e.g. the two files were
 	// saved at different points in time). 
-	if (!Banks[bankIndex]->ClaimSpecificBank(bankId, mprIndex))
+	if (!BankSetPtrs[hwBankIndex]->ClaimSpecificBank(bankId, mprIndex))
 	{
-		LOGERROR("MapBankIdToMprSlot failed: bank id %d not found in bank set %d (mpr slot %d).", bankId, bankIndex, mprIndex);
+		LOGERROR("MapBankIdToMprSlot failed: bank id %d not found in bank set %d (mpr slot %d).", bankId, hwBankIndex, mprIndex);
 		return false;
 	}
-	MprBankSet[mprIndex] = bankIndex;
+	MprBankSet[mprIndex] = hwBankIndex;
 
 	FCodeAnalysisBank* pInBank = CodeAnalysis.GetBank(bankId);
 
@@ -1554,7 +1555,7 @@ bool FPCEEmu::MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId)
 	FCodeAnalysisState& state = CodeAnalysis;
 
 	// Hardcoding save ram to be RW. This is to work around the situation where save ram can be paged in but gg reports the memory as read only.
-	const EBankAccess bankAccess = (bankIndex == kBankHWPage || bankIndex == kBankSaveRAM) ? EBankAccess::ReadWrite : pMemory->GetMemoryMapWrite()[bankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
+	const EBankAccess bankAccess = (hwBankIndex == kBankHWPage || hwBankIndex == kBankSaveRAM) ? EBankAccess::ReadWrite : pMemory->GetMemoryMapWrite()[hwBankIndex] ? EBankAccess::ReadWrite : EBankAccess::Read;
 	const int pageNo = mprIndex * 8;
 	state.MapBank(bankId, pageNo, bankAccess);
 	pInBank->PrimaryMappedPage = pageNo;
@@ -1753,7 +1754,7 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 		if (!LoadGameDbEntry(pGameConfig->Name, fname.c_str()))
 		{
 			// Create new bank mappings if no file exists
-			FGameDbEntry& dbEntry = CreateGameDbEntry(pGameConfig->Name, GetBankCount());
+			FGameDbEntry& dbEntry = CreateGameDbEntry(pGameConfig->Name, GetGameBankCount());
 			dbEntry.Banks[0].MprSlots.push_back(7);
 		}
 
@@ -1926,7 +1927,7 @@ void FPCEEmu::ExportPlatformAnalysisJson(nlohmann::json& jsonDoc)
 	jsonDoc["MprBankIds"] = mprBankIds;
 
 	nlohmann::json bankSlotStats = nlohmann::json::array();
-	for (int i = 0; i < kNumBanks; i++)
+	for (int i = 0; i < kNumHwBanks; i++)
 	{
 		const FBankSet& bs = BankSets[i];
 		if (bs.MappedSlotsMask == 0)
@@ -2194,7 +2195,7 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 	std::vector<int16_t> banksToExport;
 	for (int i = 0; i < kBankCdRomRamStart; i++)
 	{
-		const int16_t bankId = Banks[i]->GetBankId();
+		const int16_t bankId = BankSetPtrs[i]->GetBankId();
 
 		if (pMemory->GetBankType(i) == Memory::MemoryBankType::MEMORY_BANK_TYPE_ROM)
 		{
@@ -2203,7 +2204,7 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 				if (FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId))
 				{
 					//LOGINFO("%d Adding bank %s %d to export list", i, pBank->Name.c_str(), bankId);
-					banksToExport.push_back(Banks[i]->GetBankId());
+					banksToExport.push_back(BankSetPtrs[i]->GetBankId());
 				}
 			}
 		}

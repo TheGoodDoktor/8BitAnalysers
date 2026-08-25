@@ -132,7 +132,7 @@ void FDebugStatsViewer::DrawBankSets()
 
 	ImGui::Checkbox("Only show problem labels", &bOnlyShowProblemLabels);
 
-	for (int i = 0; i < FPCEEmu::kNumBanks; i++)
+	for (int i = 0; i < FPCEEmu::kNumHwBanks; i++)
 	{
 		const FBankSet& bankSet = pPCEEmu->GetBankSet(i);
 		if (bankSet.Banks.empty())
@@ -268,7 +268,7 @@ void FDebugStatsViewer::DrawBankList()
 
 	for (int i = 0; i < 256; i++)
 	{
-		if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->Banks[i]->GetBankId(0)))
+		if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->BankSetPtrs[i]->GetBankId(0)))
 		{
 			const uint8_t* gearGfxMem = pPCEEmu->GetMemory()->GetMemoryMap()[i];
 

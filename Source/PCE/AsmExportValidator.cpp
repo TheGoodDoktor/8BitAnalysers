@@ -37,7 +37,7 @@ bool FAsmExportValidator::FResults::DidPass()
 bool FAsmExportValidator::Validate(const std::vector<int16_t>& banksExported, const std::string& asmFname, bool bOutputListing/* = false*/)
 {
 #ifdef _WIN32
-	LOGINFO("Assembling: %s. [%d/%d banks]", pPCEEmu->GetProjectConfig()->Name.c_str(), (int)banksExported.size(), pPCEEmu->GetBankCount());
+	LOGINFO("Assembling: %s. [%d/%d banks]", pPCEEmu->GetProjectConfig()->Name.c_str(), (int)banksExported.size(), pPCEEmu->GetGameBankCount());
 
 	if (!Assemble(asmFname, bOutputListing))
 	{
@@ -128,7 +128,7 @@ bool FAsmExportValidator::CompareRomFiles(const std::vector<int16_t>& banksExpor
 	auto findIt = pPCEEmu->GetGamesLists().find(pPCEEmu->GetProjectConfig()->EmulatorFile.ListName);
 	if (findIt != pPCEEmu->GetGamesLists().end())
 	{
-		const int bankCount = pPCEEmu->GetBankCount();
+		const int bankCount = pPCEEmu->GetGameBankCount();
 		const std::string originalFname = findIt->second.GetRootDir() + pPCEEmu->GetProjectConfig()->EmulatorFile.FileName;
 
 		pOriginalData = (uint8_t*)LoadBinaryFile(originalFname.c_str(), originalFileSize);
@@ -159,7 +159,7 @@ bool FAsmExportValidator::CompareRomFiles(const std::vector<int16_t>& banksExpor
 
 			for (auto bankId : banksExported)
 			{
-				const uint8_t bankIndex = pPCEEmu->GetBankIndexForBankId(bankId);
+				const uint8_t bankIndex = pPCEEmu->GetHwBankIndex(bankId);
 
 				uint8_t* pAssembledBankData = pAssembledData + 0x2000 * bankIndex;
 				uint8_t* pOriginalBankData = pOriginalData + originalDataOffset + 0x2000 * bankIndex;
