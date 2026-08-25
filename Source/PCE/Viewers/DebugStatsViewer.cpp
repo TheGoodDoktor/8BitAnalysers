@@ -131,11 +131,16 @@ void FDebugStatsViewer::DrawBankSets()
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
 	ImGui::Checkbox("Only show problem labels", &bOnlyShowProblemLabels);
+	ImGui::Checkbox("Show only sets with dupes", &bOnlyShowSetsWithDupes);
 
 	for (int i = 0; i < FPCEEmu::kNumBanks; i++)
 	{
 		const FBankSet& bankSet = pPCEEmu->GetBankSet(i);
 		if (bankSet.Banks.empty())
+			continue;
+
+		// A set has dupes if it has pool banks attached beyond its fixed banks.
+		if (bOnlyShowSetsWithDupes && (int)bankSet.Banks.size() <= bankSet.NumFixedBanks)
 			continue;
 
 		if (!bOnlyShowProblemLabels)
