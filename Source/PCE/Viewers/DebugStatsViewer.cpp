@@ -365,7 +365,7 @@ void FDebugStatsViewer::DrawGeneralStats()
 	ImGui::Text("Game with most dupe banks: %s (%d)", gameWithMaxDupes.c_str(), maxDupeBanks);
 	ImGui::Text("Game with lowest FPS: %s (%.1f)", gameWithLowestFPS.c_str(), lowestFPS);
 	ImGui::Text("Max dupe banks: %d", maxDupeBanks);
-	ImGui::Text("Num bank sets: %d", kNumBankSetIds);
+	ImGui::Text("Num dupe pool banks: %d", FDupeBankPool::kNumPoolBanks);
 	ImGui::Text("Bank switches per frame: %d", pPCEEmu->pDebugStats->NumBankSwitchesThisFrame);
 
 	constexpr ImVec4 redColour(1.0f, 0.0f, 0.0f, 1.0f);
