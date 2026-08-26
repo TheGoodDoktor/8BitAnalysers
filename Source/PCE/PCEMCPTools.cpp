@@ -204,7 +204,7 @@ public:
 		if (mprBank >= FPCEEmu::kNumHwBanks)
 			return { {"error", "mpr_bank out of range (0x00-0xFF)"} };
 
-		const FBankSet* pBankSet = pPCEEmu->BankSetPtrs[mprBank];
+		const FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(mprBank);
 		if (!pBankSet)
 			return { {"error", "No bank set for this MPR bank number"} };
 

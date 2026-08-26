@@ -189,7 +189,7 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 	// ROM banks
 	for (int i = 0; i < FPCEEmu::kNumRomBanks; i++)
 	{
-		FBankSet* pBankSet = pPCEEmu->BankSetPtrs[i];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(i);
 		const int16_t bankId = pBankSet->GetBankId(0);
 		if (std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId) == ComboBankIds.end())
 		{
@@ -200,7 +200,7 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 
 	// WRAM
 	{
-		FBankSet* pBankSet = pPCEEmu->BankSetPtrs[kBankWRAM0];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(kBankWRAM0);
 		WRAMBankId = pBankSet->GetBankId(0);
 	}
 

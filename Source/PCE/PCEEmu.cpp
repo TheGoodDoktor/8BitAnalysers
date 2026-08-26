@@ -423,7 +423,7 @@ static void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 
 
 	const int bankSetIndex = pEmu->MprBankSet[mprIndex];
 	if (bankSetIndex != -1)
-		pEmu->BankSetPtrs[bankSetIndex]->SetBankFreed(mprIndex);
+		pEmu->GetBankSetPtr(bankSetIndex)->SetBankFreed(mprIndex);
 
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
@@ -737,9 +737,14 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 	}
 }
 
-const FBankSet& FPCEEmu::GetBankSet(int index)
+const FBankSet& FPCEEmu::GetBankSet(int hwBankIndex) const
 {
-	return BankSets[index];
+	return BankSets[hwBankIndex];
+}
+
+FBankSet* FPCEEmu::GetBankSetPtr(int hwBankIndex) const
+{
+	return BankSetPtrs[hwBankIndex];
 }
 
 int FPCEEmu::GetGameBankCount() const

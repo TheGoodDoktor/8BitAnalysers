@@ -19,6 +19,7 @@ protected:
 	void DrawDebugStatsTable();
 	void DrawGeneralStats();
 	void DrawBankList();
+	void DrawAnalysisBanks();
 
 protected:
 	bool bDumpBanks = false;

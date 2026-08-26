@@ -422,10 +422,10 @@ void FBanksViewer::BuildBankList(std::vector<FCodeAnalysisBank*>& banksToView, s
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
-	int bankEnd = (pPCEEmu->IsCDROM()) ? 0x88 : 0x80;
+	const int bankEnd = (pPCEEmu->IsCDROM()) ? 0x88 : 0x80;
 	for (int i = 0; i < bankEnd; i++)
 	{
-		FBankSet* pBankSet = pPCEEmu->BankSetPtrs[i];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(i);
 		const int16_t bankId = pBankSet->GetBankId(0);
 		if (FCodeAnalysisBank* pBank = state.GetBank(bankId))
 		{
@@ -439,7 +439,7 @@ void FBanksViewer::BuildBankList(std::vector<FCodeAnalysisBank*>& banksToView, s
 
 	// WRAM
 	{
-		FBankSet* pBankSet = pPCEEmu->BankSetPtrs[0xf8];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(0xf8);
 		const int16_t ramBankId = pBankSet->GetBankId(0);
 		if (FCodeAnalysisBank* pBank = state.GetBank(ramBankId))
 		{

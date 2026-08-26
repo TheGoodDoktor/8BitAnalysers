@@ -142,22 +142,20 @@ public:
 	// Get the PCE bank index (0-255) for a given bank id.
 	uint8_t GetHwBankIndex(uint16_t bankId);
 
-	const FBankSet& GetBankSet(int index);
+	const FBankSet& GetBankSet(int hwBankIndex) const;
+	FBankSet* GetBankSetPtr(int hwBankIndex) const;
 	FBankSet* GetBankSetFromBankId(int16_t bankId) const { return (bankId >= 0 && bankId < FCodeAnalysisState::BankCount) ? BankSetLookup[bankId] : nullptr; }
 	bool IsUnusedBank(int16_t bankId) const;
 
 	int GetGameBankCount() const;
 	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);
 
-	// Maximum number of PC Engine hardware banks/pages. 
+	// Maximum number of PC Engine hardware banks/pages.
 	static constexpr int kNumHwBanks = 256;
 	static constexpr int kNumRomBanks = 128;
 	static constexpr int kNumMprSlots = 8;
 	
 	static constexpr int kFramebufferSize = 2048 * 512 * 4;
-
-	// BankSet Pointers for every hw bank.
-	FBankSet* BankSetPtrs[kNumHwBanks] = { nullptr };
 	
 	// Lookup for which bank set is in each MPR slot
 	int MprBankSet[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
@@ -225,7 +223,13 @@ protected:
 	int16_t MprBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	int16_t MprBankIdPrev[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
+	// The bank set storage. Indexed by hw bank index.
+	// Not every entry will be used - it depends on how many banks the current game has. 
 	FBankSet BankSets[kNumHwBanks];
+
+	// BankSet redirection table. These hold ptrs into the BankSets.
+	// Every entry should be filled. There may be duplicate entries.
+	FBankSet* BankSetPtrs[kNumHwBanks] = { nullptr };
 
 	// Fast lookup: maps each bankId to its canonical (primary) bankId.
 	// Built once after all banks are created. Indexed directly by bankId.
