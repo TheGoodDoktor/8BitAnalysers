@@ -1,3 +1,5 @@
+#include "types.h"
+
 struct FDebugLabel
 {
 	u16 Address;
