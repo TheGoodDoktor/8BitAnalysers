@@ -2,7 +2,6 @@
 #pragma once
 
 #include "Misc/EmuBase.h"
-#include "huc6280.h"
 #include "BankSet.h"
 #include <vector>
 
@@ -32,6 +31,9 @@ struct FGameDebugStats;
 struct FAsmExportValidator;
 class FCDROMAnalyser;
 class FRecentMemoryAccess;
+
+struct HuC6280_State;
+struct HuC6270_State;
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
 {
@@ -112,8 +114,8 @@ public:
 	Memory* GetMemory() const { return pMemory; }
 	Media* GetMedia() const { return pMedia; }
 	int GetVPos() const { return *pVPos; }
-	HuC6280::HuC6280_State* Get6280State() const { return p6280State; }
-	HuC6270::HuC6270_State* Get6270State() const { return p6270State; }
+	HuC6280_State* Get6280State() const { return p6280State; }
+	HuC6270_State* Get6270State() const { return p6270State; }
 
 	bool IsCDROM() const;
 	const FCDROMAnalyser* GetCDROMAnalyser() const { return pCDROMAnalyser; }
@@ -204,8 +206,8 @@ protected:
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
 	int* pVPos = nullptr; // HuC6270 vertical position, cached for speed.
-	HuC6280::HuC6280_State* p6280State = nullptr;
-	HuC6270::HuC6270_State* p6270State = nullptr;
+	HuC6280_State* p6280State = nullptr;
+	HuC6270_State* p6270State = nullptr;
 	FVRAMAnalysisState* pVRAMState = nullptr;
 	FCDROMAnalyser* pCDROMAnalyser = nullptr;
 	FPCECPUEmulator6502* pPCE6502CPU;

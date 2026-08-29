@@ -11,6 +11,8 @@
 #include "../PCEEmu.h"
 #include "../BankSet.h"
 
+#include "geargrafx_core.h"
+
 static const int kBytesPerSpriteBlock = 128;	// 4bpp 16x16 planar sprite
 static const int kBytesPerBGTile      = 32;	// 4bpp 8x8 planar BG tile
 

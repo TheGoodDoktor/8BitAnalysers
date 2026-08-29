@@ -47,25 +47,27 @@
 class Memory;
 class HuC6202;
 
+// sam. Moved out of class so we can forward declare it.
+struct HuC6280_State
+{
+    SixteenBitRegister* PC;
+    EightBitRegister* A;
+    EightBitRegister* X;
+    EightBitRegister* Y;
+    EightBitRegister* S;
+    EightBitRegister* P;
+    s32* SPEED;
+    bool* TIMER;
+    u8* TIMER_COUNTER;
+    u8* TIMER_RELOAD;
+    u8* IDR;
+    u8* IRR;
+    u32* CYCLES;
+};
+
 class HuC6280
 {
 public:
-    struct HuC6280_State
-    {
-        SixteenBitRegister* PC;
-        EightBitRegister* A;
-        EightBitRegister* X;
-        EightBitRegister* Y;
-        EightBitRegister* S;
-        EightBitRegister* P;
-        s32* SPEED;
-        bool* TIMER;
-        u8* TIMER_COUNTER;
-        u8* TIMER_RELOAD;
-        u8* IDR;
-        u8* IRR;
-        u32* CYCLES;
-    };
 
     enum GG_Breakpoint_Type
     {

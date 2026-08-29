@@ -43,10 +43,7 @@ public:
 
 	virtual bool	LoadLua(){ return false;}
 
-	// Optional hooks for platform-specific data in the shared analysis JSON file.
-	// Override these in a platform emulator to read/write extra fields inside the
-	// same JSON document without touching any shared code.  The default
-	// implementations are no-ops so platforms that don't need them pay nothing.
+	// sam. Optional hooks for platform-specific data in the shared analysis JSON file.
 	virtual void	ExportPlatformAnalysisJson(nlohmann::json& jsonDoc) {}
 	virtual bool	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) { return true; }
 
@@ -59,7 +56,7 @@ public:
 	virtual void	OnEnterEditMode(void) {}
 	virtual void	OnExitEditMode(void) {}
 
-	// this should probably go somewhere else
+	// sam. This should probably go somewhere else
 	virtual int16_t		GetCanonicalBankId(int16_t bankId) const { return bankId; }
 
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);

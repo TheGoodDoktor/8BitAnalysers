@@ -174,7 +174,7 @@ public:
 		return p6280State->P->SetValue(val);
 	}
 
-	HuC6280::HuC6280_State* p6280State = nullptr;
+	HuC6280_State* p6280State = nullptr;
 	FPCEEmu* pPCEEmu = nullptr;
 };
 
