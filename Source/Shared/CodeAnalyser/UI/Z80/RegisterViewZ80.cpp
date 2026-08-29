@@ -1,6 +1,7 @@
 #include "RegisterViewZ80.h"
 
 #include "../../CodeAnalyser.h"
+#if USE_CHIPS // sam
 #include "../CodeAnalyserUI.h"
 
 #include <Util/Misc.h>
@@ -409,3 +410,8 @@ void DrawMachineStateZ80(const FMachineState* pMachineStateBase, FCodeAnalysisSt
 
 
 }
+#else
+void DrawRegisters_Z80(FCodeAnalysisState& state) {}
+void DrawMachineStateZ80(const FMachineState* pMachineStateBase, FCodeAnalysisState& state, FCodeAnalysisViewState& viewState) {}
+
+#endif
