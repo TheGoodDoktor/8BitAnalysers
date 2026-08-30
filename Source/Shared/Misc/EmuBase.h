@@ -43,10 +43,7 @@ public:
 
 	virtual bool	LoadLua(){ return false;}
 
-	// Optional hooks for platform-specific data in the shared analysis JSON file.
-	// Override these in a platform emulator to read/write extra fields inside the
-	// same JSON document without touching any shared code.  The default
-	// implementations are no-ops so platforms that don't need them pay nothing.
+	// sam. Optional hooks for platform-specific data in the shared analysis JSON file.
 	virtual void	ExportPlatformAnalysisJson(nlohmann::json& jsonDoc) {}
 	virtual bool	ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc) { return true; }
 
@@ -59,7 +56,7 @@ public:
 	virtual void	OnEnterEditMode(void) {}
 	virtual void	OnExitEditMode(void) {}
 
-	// this should probably go somewhere else
+	// sam. This should probably go somewhere else
 	virtual int16_t		GetCanonicalBankId(int16_t bankId) const { return bankId; }
 
 	bool			StartGameFromName(const char* pGameName, bool bLoadGame);
@@ -89,17 +86,14 @@ public:
 
 	FCodeAnalysisState&		GetCodeAnalysis() { return CodeAnalysis; }
 	const FGlobalConfig*	GetGlobalConfig() const { return pGlobalConfig; }
+
 	const FProjectConfig*	GetProjectConfig() const { return pCurrentProjectConfig; }
 	virtual FGraphicsView*	GetScreen() const { return nullptr; }
 	virtual const uint8_t*	GetScreenBuffer(int& width, int& height) const { width = 0; height = 0; return nullptr; } // sam
-	bool					HasProjectLoaded() const { return pCurrentProjectConfig != nullptr; }
-
-	void	RequestQuit() { bQuitRequested = true; }
-	bool	IsQuitConfirmed() const { return bQuitConfirmed; }
 
 	std::string		GetGameWorkspaceRoot() const;
 	
-    void			SetLastError(const char* fmt, ...);
+	void			SetLastError(const char* fmt, ...);
 	void			DisplayErrorMessage(const char *fmt, ...);
 
 	FGlobalsViewer* GetGlobalsViewer() { return pGlobalsViewer; }
@@ -137,7 +131,6 @@ protected:
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
 	void			DrawErrorMessageModalPopup(void);
-	void			DrawQuitConfirmPopup(void);
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
 	FProjectConfig*		pCurrentProjectConfig = nullptr;
@@ -181,9 +174,6 @@ public:
 
 protected:
 	bool		bShowDebugLog = false;
-	bool		bQuitRequested = false;
-	bool		bQuitConfirmed = false;
-	bool		bSaveOnShutdown = true;
 	bool		bNewProjectPopup = false;
 	std::string	NewProjectListName;
 	bool		bOpenProjectPopup = false;

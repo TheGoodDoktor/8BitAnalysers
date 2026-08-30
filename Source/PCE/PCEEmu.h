@@ -2,7 +2,6 @@
 #pragma once
 
 #include "Misc/EmuBase.h"
-#include "huc6280.h"
 #include "BankSet.h"
 #include <vector>
 
@@ -32,6 +31,9 @@ struct FGameDebugStats;
 struct FAsmExportValidator;
 class FCDROMAnalyser;
 class FRecentMemoryAccess;
+
+struct HuC6280_State;
+struct HuC6270_State;
 
 struct FPCELaunchConfig : public FEmulatorLaunchConfig
 {
@@ -112,8 +114,8 @@ public:
 	Memory* GetMemory() const { return pMemory; }
 	Media* GetMedia() const { return pMedia; }
 	int GetVPos() const { return *pVPos; }
-	HuC6280::HuC6280_State* Get6280State() const { return p6280State; }
-	HuC6270::HuC6270_State* Get6270State() const { return p6270State; }
+	HuC6280_State* Get6280State() const { return p6280State; }
+	HuC6270_State* Get6270State() const { return p6270State; }
 
 	bool IsCDROM() const;
 	const FCDROMAnalyser* GetCDROMAnalyser() const { return pCDROMAnalyser; }
@@ -139,25 +141,24 @@ public:
 
 	int  CreateUserPalette(int dynamicPaletteIndex);
 
-	const FBankSet& GetBankSet(int index);
-
 	// Get the PCE bank index (0-255) for a given bank id.
-	uint8_t GetBankIndexForBankId(uint16_t bankId);
+	uint8_t GetHwBankIndex(uint16_t bankId);
 
+	const FBankSet& GetBankSet(int hwBankIndex) const;
+	FBankSet* GetBankSetPtr(int hwBankIndex) const;
 	FBankSet* GetBankSetFromBankId(int16_t bankId) const { return (bankId >= 0 && bankId < FCodeAnalysisState::BankCount) ? BankSetLookup[bankId] : nullptr; }
 	bool IsUnusedBank(int16_t bankId) const;
 
-	int GetBankCount() const;
+	int GetGameBankCount() const;
 	void MapMprBank(uint8_t mprIndex, uint8_t newBankIndex);
 	void FreeMprSlotBank(uint8_t mprIndex);
 
-	static constexpr int kNumBanks = 256;
+	// Maximum number of PC Engine hardware banks/pages.
+	static constexpr int kNumHwBanks = 256;
 	static constexpr int kNumRomBanks = 128;
 	static constexpr int kNumMprSlots = 8;
 	
 	static constexpr int kFramebufferSize = 2048 * 512 * 4;
-
-	FBankSet* Banks[kNumBanks] = { nullptr };
 	
 	// Lookup for which bank set is in each MPR slot
 	int MprBankSet[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
@@ -185,7 +186,8 @@ protected:
 	void UpdateDebugStats();
 	void ResetBanks();
 	void MapMprBanks();
-	int16_t GetBankIdForMprSlot(uint8_t bankIndex, uint8_t mprIndex);
+
+	int16_t GetBankIdForMprSlot(uint8_t hwBankIndex, uint8_t mprIndex);
 	int16_t ClaimDupeBankForSet(FBankSet* pBankSet, uint8_t mprIndex);
 
 	bool MapBankIdToMprSlot(uint8_t mprIndex, int16_t bankId);
@@ -207,8 +209,8 @@ protected:
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
 	int* pVPos = nullptr; // HuC6270 vertical position, cached for speed.
-	HuC6280::HuC6280_State* p6280State = nullptr;
-	HuC6270::HuC6270_State* p6270State = nullptr;
+	HuC6280_State* p6280State = nullptr;
+	HuC6270_State* p6270State = nullptr;
 	FVRAMAnalysisState* pVRAMState = nullptr;
 	FCDROMAnalyser* pCDROMAnalyser = nullptr;
 	FPCECPUEmulator6502* pPCE6502CPU;
@@ -220,13 +222,19 @@ protected:
 	FVRAMViewer* pVRAMViewer = nullptr;
 	FCDROMViewer* pCDROMViewer = nullptr;
 
-	// used for #ifdef BANK_SWITCH_DEBUG
+	// used for BANK_SWITCH_DEBUG
 	bool bDoneInitialBankMapping = false;
 
 	int16_t MprBankId[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	int16_t MprBankIdPrev[kNumMprSlots] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
-	FBankSet BankSets[kNumBanks];
+	// The bank set storage. Indexed by hw bank index.
+	// Not every entry will be used - it depends on how many banks the current game has. 
+	FBankSet BankSets[kNumHwBanks];
+
+	// BankSet redirection table. These hold ptrs into the BankSets.
+	// Every entry should be filled. There may be duplicate entries.
+	FBankSet* BankSetPtrs[kNumHwBanks] = { nullptr };
 
 	// Shared pool of banks used to represent duplicate mappings.
 	FDupeBankPool DupeBankPool;
