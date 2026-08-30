@@ -55,6 +55,7 @@ TODO
 - zp memory gets marked as code. rondo of blood. even after setting back to data the operand data persists. maybe fixed...
 - add option to toggle function end seperators
 - FBankSet::ClaimSpecificBank can fail to find bank. happened with rabio lepus.
+- Add Ctrl + up and down to keyboard shortcut help
 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
