@@ -127,13 +127,13 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 {
 	if (MemorySource == EPCEMemorySource::VRAM)
-		return FAddressRef();
+		return FAddressRef::Invalid();
 
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	const int16_t bankId = (MemorySource == EPCEMemorySource::WRAM) ? WRAMBankId : SelectedBankId;
 	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
-	if (pBank == nullptr || pGraphicView == nullptr)
-		return FAddressRef();
+	if (pBank == nullptr || pGraphicView == nullptr || pBank->PrimaryMappedPage == -1)
+		return FAddressRef::Invalid();
 
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
 	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
