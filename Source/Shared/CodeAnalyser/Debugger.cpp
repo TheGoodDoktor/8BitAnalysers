@@ -303,10 +303,12 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 #endif
 		break;
 	case ECPUType::M6502:
-		//bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
+#if USE_CHIPS // sam
+		bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
+#endif
 		break;
 	case ECPUType::HuC6280:	// M65C02 is a superset of M6502
-		// IRQ is handled in FPCEEmu::OnIRQ()
+		// sam. IRQ is handled in FPCEEmu::OnIRQ()
 		break;
 	}
 
