@@ -170,7 +170,7 @@ private:
 };
 
 
-// Graphics Viewer
+// sam. This is unfinished
 class FDataTypesViewer : public FViewerBase
 {
 public:

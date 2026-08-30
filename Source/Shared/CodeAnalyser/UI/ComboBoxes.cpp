@@ -164,6 +164,7 @@ bool DrawDataDisplayTypeCombo(const char* pLabel, EDataItemDisplayType& displayT
 	return DrawEnumCombo<EDataItemDisplayType>(pLabel, displayType, g_DisplayTypes, [&state](EDataItemDisplayType type) { return IsDisplayTypeSupported(type, state); });
 }
 
+// sam. This is a curated subset of EDataType - only the types a user can pick from the Format Data Type combo box. 
 static const std::vector<std::pair<const char*, EDataType>> g_DataTypes =
 {
 	{ "Byte",           EDataType::Byte },
@@ -177,9 +178,13 @@ static const std::vector<std::pair<const char*, EDataType>> g_DataTypes =
 	{ "Struct",         EDataType::Struct },
 };
 
-bool DrawDataTypeCombo(const char* pLabel, EDataType& displayType)
+// sam. Disable character map functionality (for now).
+bool DrawDataTypeCombo(const char* pLabel, EDataType& displayType, const bool* pSupportedDataTypes)
 {
-	return DrawEnumCombo<EDataType>(pLabel, displayType, g_DataTypes);
+	return DrawEnumCombo<EDataType>(pLabel, displayType, g_DataTypes, [pSupportedDataTypes](EDataType type)
+	{
+		return pSupportedDataTypes == nullptr || pSupportedDataTypes[(int)type];
+	});
 }
 
 static const std::vector<std::pair<const char*, EDataTypeFilter>> g_DataFilterTypes =

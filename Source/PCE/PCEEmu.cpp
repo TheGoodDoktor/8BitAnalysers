@@ -1233,6 +1233,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	CodeAnalysis.Config.RomType = ESystemRom::None;
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::CharacterMap] = false;	// Character map feature isn't working on PCE yet - hide it from the user.
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::ColAttr] = false;	// ColAttr is ZX Spectrum specific (I think)
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::Struct] = false;	// Structs don't work properly yet.
 
 #if CDROM_SUPPORT
 	// todo: check this is system card 3.0.

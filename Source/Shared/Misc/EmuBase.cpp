@@ -88,7 +88,7 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 	io.IniFilename = iniFile.c_str();
 	
 	RegisterBasicDisplayTypes();
-    AddViewer(new FDataTypesViewer(this));
+	//AddViewer(new FDataTypesViewer(this)); // sam. Disabled data types viewer. Structs= & Flags are not fully working
 
 	pGlobalsViewer = new FGlobalsViewer(this);
 	AddViewer(pGlobalsViewer);
