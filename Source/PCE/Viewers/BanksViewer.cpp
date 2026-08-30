@@ -107,7 +107,7 @@ static void SortBankTable(const ImGuiTableSortSpecs* sortSpecs,	const std::vecto
 	std::sort(sortedIndices.begin(), sortedIndices.end(), Compare);
 }
 
-void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, const std::vector<FBankSet*>& BankSets)
+void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& banks, const std::vector<FBankSet*>& bankSets)
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FGameDbEntry* pDbEntry = nullptr;
@@ -119,10 +119,10 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 	static std::vector<int> sortedIndices;
 
 	// Initialize index list once or if size changes
-	if (sortedIndices.size() != Banks.size())
+	if (sortedIndices.size() != banks.size())
 	{
-		sortedIndices.resize(Banks.size());
-		for (int i = 0; i < (int)Banks.size(); ++i)
+		sortedIndices.resize(banks.size());
+		for (int i = 0; i < (int)banks.size(); ++i)
 			sortedIndices[i] = i;
 		SelectedBankIdx = -1;
 	}
@@ -161,7 +161,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 		{
 			if (sortSpecs->SpecsDirty)
 			{
-				SortBankTable(sortSpecs, Banks, sortedIndices);
+				SortBankTable(sortSpecs, banks, sortedIndices);
 				sortSpecs->SpecsDirty = false;
 			}
 		}
@@ -169,7 +169,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 		// Draw rows
 		for (int idx : sortedIndices)
 		{
-			const FCodeAnalysisBank* pBank = Banks[idx];
+			const FCodeAnalysisBank* pBank = banks[idx];
 
 			ImGui::TableNextRow();
 
@@ -232,6 +232,16 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 			if (pBank->bEverBeenMapped)
 			{
 				ImGui::TextColored(colour, "%s", NumStr(pBank->GetMappedAddress()));
+				// attempt to draw correct mapped address for dupe banks
+				/*const FBankSet* pBankSet = bankSets[idx];
+
+				// this crashes when viewing all banks.
+				FCodeAnalysisBank* pSetBank = nullptr;
+				if (bankSets.size() <= 8)
+					pSetBank = pBankSet->SlotBankId[idx] != -1 ? state.GetBank(pBankSet->Banks[pBankSet->SlotBankId[idx]].BankId) : nullptr;
+
+				ImGui::TextColored(colour, "%s %d %s", NumStr(pBank->GetMappedAddress()), pBankSet->SlotBankId[idx], pSetBank ? NumStr(pSetBank->GetMappedAddress()) : "-");
+				*/
 				if (ImGui::IsItemHovered())
 				{
 					const FAddressRef bankAddr(pBank->Id, pBank->GetMappedAddress());
@@ -255,7 +265,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& Banks, c
 			// MPR Slots
 			ImGui::TableSetColumnIndex(5);
 			{
-				const FBankSet* pBankSet = BankSets[idx];
+				const FBankSet* pBankSet = bankSets[idx];
 				//const float squareSize = ImGui::GetTextLineHeight() - 2.0f;
 				const float gap = 2.0f;
 				const ImVec2 startPos = ImGui::GetCursorScreenPos();
@@ -391,7 +401,7 @@ void FBanksViewer::DrawMappedBanks()
 
 	const float detailWidth = ImGui::GetFontSize() * 24.0f;
 	const float minTableWidth = ImGui::GetFontSize() * 22.0f;
-	const float tableWidth = MAX(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
+	const float tableWidth = std::max(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
 
 	// todo default to sorting by mapped address
 	ImGui::BeginChild("##MappedBankTablePane", ImVec2(tableWidth, 0.0f), false);
@@ -412,10 +422,10 @@ void FBanksViewer::BuildBankList(std::vector<FCodeAnalysisBank*>& banksToView, s
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
-	int bankEnd = (pPCEEmu->IsCDROM()) ? 0x88 : 0x80;
+	const int bankEnd = (pPCEEmu->IsCDROM()) ? 0x88 : 0x80;
 	for (int i = 0; i < bankEnd; i++)
 	{
-		FBankSet* pBankSet = pPCEEmu->Banks[i];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(i);
 		const int16_t bankId = pBankSet->GetBankId(0);
 		if (FCodeAnalysisBank* pBank = state.GetBank(bankId))
 		{
@@ -429,7 +439,7 @@ void FBanksViewer::BuildBankList(std::vector<FCodeAnalysisBank*>& banksToView, s
 
 	// WRAM
 	{
-		FBankSet* pBankSet = pPCEEmu->Banks[0xf8];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(0xf8);
 		const int16_t ramBankId = pBankSet->GetBankId(0);
 		if (FCodeAnalysisBank* pBank = state.GetBank(ramBankId))
 		{
@@ -448,7 +458,7 @@ void FBanksViewer::DrawAllBanks()
 
 	const float detailWidth = ImGui::GetFontSize() * 20.0f;
 	const float minTableWidth = ImGui::GetFontSize() * 26.0f;
-	const float tableWidth = MAX(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
+	const float tableWidth = std::max(minTableWidth, ImGui::GetContentRegionAvail().x - detailWidth - ImGui::GetStyle().ItemSpacing.x);
 
 	ImGui::BeginChild("##BankTablePane", ImVec2(tableWidth, 0.0f), false);
 	DrawBankTable(banksToView, bankSetsToView);

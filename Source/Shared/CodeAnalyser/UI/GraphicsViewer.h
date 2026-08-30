@@ -70,7 +70,7 @@ public:
 class FGraphicsViewer : public FGraphicsViewerBase
 {
 public:
-					FGraphicsViewer(FEmuBase* pEmu) : FGraphicsViewerBase(pEmu) { Name = "Graphics View";}
+					FGraphicsViewer(FEmuBase* pEmu) : FGraphicsViewerBase(pEmu) { Name = "Old Graphics View";} // sam. Renamed to Old Graphics View
 	bool			Init(void) override;
 	void			Shutdown(void) override;
 	void			Reset();

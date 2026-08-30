@@ -1,5 +1,6 @@
 #include "DataItemZ80.h"
 
+#if USE_CHIPS // sam
 #include "../../CodeAnalyser.h"
 #include <chips/z80.h>
 #include <imgui.h>
@@ -76,3 +77,6 @@ bool DrawDataItemRegisterPtrsZ80(FCodeAnalysisState& state, uint16_t physAddr, u
 	}
 	return false;
 }
+#else
+bool DrawDataItemRegisterPtrsZ80(FCodeAnalysisState& state, uint16_t physAddr, uint16_t itemSize) { return false; }
+#endif // #if USE_CHIPS // sam

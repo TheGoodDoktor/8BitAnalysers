@@ -33,7 +33,7 @@ void FBackgroundViewer::DrawUI()
 
 	GeargrafxCore* core = pPCEEmu->GetCore();
 	HuC6270* huc6270 = core->GetHuC6270_1();
-	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
+	HuC6270_State* huc6270_state = huc6270->GetState();
 	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();
@@ -218,7 +218,7 @@ bool FBackgroundViewer::UpdateBackground()
 {
 	GeargrafxCore* pCore = pPCEEmu->GetCore();
 	HuC6270* huc6270 = pCore->GetHuC6270_1();
-	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
+	HuC6270_State* huc6270_state = huc6270->GetState();
 	HuC6260* huc6260 = pCore->GetHuC6260();
 	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
@@ -347,7 +347,7 @@ void FBackgroundViewer::DrawTileDetails(int tileIndex)
 {
 	GeargrafxCore* core     = pPCEEmu->GetCore();
 	HuC6270*       huc6270  = core->GetHuC6270_1();
-	HuC6270::HuC6270_State* huc6270_state = huc6270->GetState();
+	HuC6270_State* huc6270_state = huc6270->GetState();
 	FVRAMAnalysisState* pVRAMState = pPCEEmu->GetVRAMAnalysisState();
 	FCodeAnalysisState& state  = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState = state.GetFocussedViewState();

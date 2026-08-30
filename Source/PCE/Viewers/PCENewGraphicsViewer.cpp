@@ -11,6 +11,8 @@
 #include "../PCEEmu.h"
 #include "../BankSet.h"
 
+#include "geargrafx_core.h"
+
 static const int kBytesPerSpriteBlock = 128;	// 4bpp 16x16 planar sprite
 static const int kBytesPerBGTile      = 32;	// 4bpp 8x8 planar BG tile
 
@@ -28,7 +30,7 @@ static void BuildGreyscalePalette(uint32_t* out)
 FPCENewGraphicsViewer::FPCENewGraphicsViewer(FEmuBase* pEmu)
 	: FGraphicsViewerBase(pEmu)
 {
-	Name = "PCE Graphics";
+	Name = "Graphics";
 	pPCEEmu = static_cast<FPCEEmu*>(pEmu);
 
 	BuildGreyscalePalette(GreyscalePalette);
@@ -203,14 +205,14 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 		}
 		else if (MemorySource == EPCEMemorySource::ROM_BIOS)
 		{
-			bankCount = pPCEEmu->GetBankCount();
+			bankCount = pPCEEmu->GetGameBankCount();
 		}
 	}
 
 	const int bankEnd = bankStart + bankCount;
 	for (int i = bankStart; i < bankEnd; i++)
 	{
-		FBankSet* pBankSet = pPCEEmu->Banks[i];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(i);
 		const int16_t bankId = pBankSet->GetBankId();
 		if (std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId) == ComboBankIds.end())
 		{
@@ -221,7 +223,7 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 
 	// WRAM
 	{
-		FBankSet* pBankSet = pPCEEmu->Banks[kBankWRAM0];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(kBankWRAM0);
 		WRAMBankId = pBankSet->GetBankId();
 	}
 

@@ -6,6 +6,7 @@
 #include "../GameDb.h"
 #include "../DebugStats.h"
 #include "BatchGameLoadViewer.h"
+#include "CodeAnalyser/CodeAnalyser.h"
 
 #include <geargrafx_core.h>
 
@@ -111,6 +112,11 @@ void FDebugStatsViewer::DrawUI()
 			DrawDebugStatsTable();
 			ImGui::EndTabItem();
 		}
+		if (ImGui::BeginTabItem("Analysis Banks"))
+		{
+			DrawAnalysisBanks();
+			ImGui::EndTabItem();
+		}
 		if (ImGui::BeginTabItem("Bank List"))
 		{
 			DrawBankList();
@@ -133,7 +139,7 @@ void FDebugStatsViewer::DrawBankSets()
 	ImGui::Checkbox("Only show problem labels", &bOnlyShowProblemLabels);
 	ImGui::Checkbox("Show only sets with dupes", &bOnlyShowSetsWithDupes);
 
-	for (int i = 0; i < FPCEEmu::kNumBanks; i++)
+	for (int i = 0; i < FPCEEmu::kNumHwBanks; i++)
 	{
 		const FBankSet& bankSet = pPCEEmu->GetBankSet(i);
 		if (bankSet.Banks.empty())
@@ -262,6 +268,7 @@ void FDebugStatsViewer::DrawDebugStatsTable()
 	ImGui::Text("Avg Framerate %.2f", avgFrameRate / (float)SortedGameStats.size());
 }
 
+
 void FDebugStatsViewer::DrawBankList()
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
@@ -271,9 +278,9 @@ void FDebugStatsViewer::DrawBankList()
 	constexpr ImVec4 yellowColour(1.0f, 1.0f, 0.0f, 1.0f);
 	constexpr ImVec4 greenColour(0.0f, 1.0f, 0.0f, 1.0f);
 
-	for (int i = 0; i < 256; i++)
+	for (int i = 0; i < FPCEEmu::kNumHwBanks; i++)
 	{
-		if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->Banks[i]->GetBankId(0)))
+		if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->GetBankSetPtr(i)->GetBankId(0)))
 		{
 			const uint8_t* gearGfxMem = pPCEEmu->GetMemory()->GetMemoryMap()[i];
 
@@ -302,6 +309,19 @@ void FDebugStatsViewer::DrawBankList()
 				pBank->Name.c_str(),
 				pBank->Mapping == EBankAccess::Read ? "R" : pBank->Mapping == EBankAccess::ReadWrite ? "RW" : "?");
 		}
+	}
+}
+
+void FDebugStatsViewer::DrawAnalysisBanks()
+{
+	ImGui::Text("Num Code Analysis Banks = %d ", FCodeAnalysisState::BankCount);
+	ImGui::Separator();
+
+	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
+	for (int b = 0; b < FCodeAnalysisState::BankCount; b++)
+	{
+		FCodeAnalysisBank& bank = state.GetBanks()[b];
+		ImGui::Text("%03d %-12s %s %s", b, bank.Name.c_str(), bank.Mapping == EBankAccess::Read ? "R" : bank.Mapping == EBankAccess::ReadWrite ? "RW" : "--", bank.PrimaryMappedPage == -1 ? "No address" : NumStr(bank.GetMappedAddress()));
 	}
 }
 
@@ -395,47 +415,6 @@ void FDebugStatsViewer::DrawGeneralStats()
 		}
 	}
 	
-	// dont think we need this now we have the banks view in game db?
-	/*if (ImGui::TreeNode("Games Bank mappings"))
-	{
-		TGameDb& gameDb = GetGameDb();
-		for (const auto it : gameDb)
-		{
-			const FGameDebugStats* pGameStats = pPCEEmu->pDebugStats->GetDebugStatsForGame(it.first);
-			const FGameDbEntry& entry = it.second;
-			bool bTreeOpen = ImGui::TreeNode(it.first.c_str());
-
-			if (pGameStats)
-			{
-				ImGui::SameLine();
-				if (pGameStats->NumBanksMapped == pGameStats->NumBanks)
-				{
-					if (entry.NumDynamicBanks == 0)
-						ImGui::TextColored(greenColour, "FIXED");
-					else
-						ImGui::TextColored(yellowColour, "DYNAMIC");
-				}
-				else
-					ImGui::TextColored(redColour, "INCOMPLETE");
-			}
-
-			if (bTreeOpen)
-			{
-				//ImGui::Text("%s", it.first.c_str());
-				for (int i = 0; i < entry.Banks.size(); i++)
-				{
-					const int mprSlot = entry.Banks[i].MprSlots[0];
-					if (mprSlot == -1)
-						ImGui::Text("  %02d - ----", i);
-					else
-						ImGui::TextColored(!entry.Banks[i].bFixed ? yellowColour : whiteColour, "  %02d %d %04x", i, mprSlot, mprSlot * 0x2000);
-				}
-				ImGui::TreePop();
-			}
-		}
-		ImGui::TreePop();
-	}*/
-
 	if (ImGui::TreeNode("Games with all banks mapped"))
 	{
 		TGameDb& gameDb = GetGameDb();

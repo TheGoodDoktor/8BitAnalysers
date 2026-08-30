@@ -41,7 +41,7 @@ FGameDebugStats* FEmuDebugStats::GetDebugStatsForGame(const std::string& gameNam
 
 void FEmuDebugStats::InitForGame(FPCEEmu* pEmu, const std::string& gameName)
 {
-	GameDebugStats[gameName].NumBanks = pEmu->GetBankCount();
+	GameDebugStats[gameName].NumBanks = pEmu->GetGameBankCount();
 	pPerfStats->Reset();
 }
 

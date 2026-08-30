@@ -2,8 +2,10 @@
 
 #include <CodeAnalyser/CodeAnalyserTypes.h>
 
+#if USE_CHIPS // sam
 #include <chips/z80.h>
 #include <chips/m6502.h>
+#endif
 #include <vector>
 #include <optional>
 
@@ -61,10 +63,6 @@ struct FCodeAnalysisViewState;
 
 class ICPUEmulator6502;
 class ICPUEmulatorZ80;
-
-// TODO: figure out how to forward dec these
-//struct z80_t;
-//struct m6502_t;
 
 enum class EDebugStepMode
 {
@@ -249,8 +247,10 @@ private:
 	FCodeAnalysisState*	pCodeAnalysis = nullptr;
 
 	ECPUType		CPUType = ECPUType::Unknown;
+#if USE_CHIPS // sam
 	z80_t*			pZ80 = nullptr;
 	m6502_t*		pM6502 = nullptr;
+#endif
 	uint64_t		LastTickPins = 0;
 	FAddressRef		PC;
 	bool			bDebuggerStopped = false;

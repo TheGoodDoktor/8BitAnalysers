@@ -19,10 +19,12 @@ protected:
 	void DrawDebugStatsTable();
 	void DrawGeneralStats();
 	void DrawBankList();
+	void DrawAnalysisBanks();
 
 protected:
 	bool bDumpBanks = false;
 	bool bOnlyShowProblemLabels = false;
+	bool bOnlyShowSetsWithDupes = false;
 	
 	std::map<std::string, float> TimeUntilMapped;
 

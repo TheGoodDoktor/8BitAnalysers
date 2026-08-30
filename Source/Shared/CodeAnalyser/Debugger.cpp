@@ -5,7 +5,9 @@
 #include <CodeAnalyser/CodeAnalyser.h>
 #include <CodeAnalyser/MemoryAnalyser.h>
 
+#if USE_CHIPS // sam
 #include <chips/z80.h>
+#endif
 
 #include <imgui.h>
 #include "UI/CodeAnalyserUI.h"
@@ -24,20 +26,23 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 	switch (CPUType)
 	{
 		case ECPUType::Z80:
+#if USE_CHIPS // sam
 			pZ80 = (z80_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 			pICPUZ80 = (ICPUEmulatorZ80*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 
 			StackMin = 0xffff;
 			StackMax = 0;
+#endif
 			break;
 		case ECPUType::M6502:
+#if USE_CHIPS // sam
 			pM6502 = (m6502_t*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 			// Stack in 6502 is hard coded between 0x100-0x1ff
 			StackMin = 0x1ff;
 			StackMax = 0x1ff;
+#endif
 			break;
 		case ECPUType::HuC6280:
-			pM6502 = nullptr;
 			pICPU6502 = (ICPUEmulator6502*)pCodeAnalysis->GetCPUInterface()->GetCPUEmulator();
 
 			// Stack in HuC6280 is hard coded between 0x2100-0x21ff
@@ -64,6 +69,7 @@ void FDebugger::Init(FCodeAnalysisState* pCA)
 // sam. this is only used for chips. not for geargfx.
 void FDebugger::CPUTick(uint64_t pins)
 {
+#if USE_CHIPS // sam
 	const uint64_t risingPins = pins & (pins ^ LastTickPins);
 	int trapId = kTrapId_None;
 
@@ -229,6 +235,7 @@ void FDebugger::CPUTick(uint64_t pins)
 	}
 
 	LastTickPins = pins;
+#endif // #if USE_CHIPS // sam
 }
 
 int FDebugger::OnInstructionExecuted(uint64_t pins)
@@ -291,10 +298,12 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	switch (CPUType)
 	{
 	case ECPUType::Z80:
+#if USE_CHIPS // sam
 		bIRQ = (pins & Z80_INT) && pZ80->iff1;
+#endif
 		break;
 	case ECPUType::M6502:
-		bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
+		//bIRQ = pM6502->brk_flags & M6502_BRK_IRQ;
 		break;
 	case ECPUType::HuC6280:	// M65C02 is a superset of M6502
 		// IRQ is handled in FPCEEmu::OnIRQ()
@@ -321,6 +330,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 		CallStack.push_back(callInfo);
 
 #ifndef NDEBUG
+		//sam
 		if (CPUType == ECPUType::HuC6280)
 		{
 			if (CallStack.size() > 256)
@@ -338,6 +348,7 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 	switch (CPUType)
 	{
 		case ECPUType::Z80:
+#if USE_CHIPS // sam
 		{
 			const uint16_t sp = pZ80->sp;
 			if (sp == StackMin - 2 || StackMin == 0xffff)
@@ -345,13 +356,16 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 			if (sp == StackMax + 2 || StackMax == 0)
 				StackMax = sp;
 		}
+#endif
 		break;
 
 		case ECPUType::M6502:
 		{
+#if USE_CHIPS // sam
 			const uint16_t sp = pM6502->S + 0x100;
 			StackMin = std::min(sp, StackMin);
 			StackMax = 0x1ff;	// always starts here on 6502
+#endif
 		}
 		break;
 		case ECPUType::HuC6280:	// HuC6280 is a superset of M65C02
@@ -360,7 +374,6 @@ int FDebugger::OnInstructionExecuted(uint64_t pins)
 			StackMax = 0x21ff;	// always starts here on HuC6280
 			break;
 	}
-
 	return trapId;
 }
 
@@ -993,6 +1006,7 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 {
 	if (CPUType == ECPUType::Z80)
 	{
+#if USE_CHIPS // sam
 		if (strcmp(regName, "A") == 0)
 			return outVal = pZ80->a, true;
 		else if (strcmp(regName, "F") == 0)
@@ -1013,6 +1027,7 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 			return outVal = pZ80->r, true;
 		else if (strcmp(regName, "I") == 0)
 			return outVal = pZ80->i, true;
+#endif
 	}
 	else if (CPUType == ECPUType::M6502 || CPUType == ECPUType::HuC6280)
 	{
@@ -1027,7 +1042,6 @@ bool FDebugger::GetRegisterByteValue(const char* regName, uint8_t& outVal) const
 		else if (strcmp(regName, "P") == 0)
 			return outVal = pICPU6502->GetP(), true;
 	}
-
 	return false;
 }
 
@@ -1035,6 +1049,7 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 {
 	if (CPUType == ECPUType::Z80)
 	{
+#if USE_CHIPS // sam
 		if (strcmp(regName, "AF") == 0)
 			return outVal = pZ80->af, true;
 		else if (strcmp(regName, "BC") == 0)
@@ -1051,6 +1066,7 @@ bool FDebugger::GetRegisterWordValue(const char* regName, uint16_t& outVal) cons
 			return outVal = pZ80->sp, true;
 		else if (strcmp(regName, "PC") == 0)
 			return outVal = pZ80->pc, true;
+#endif
 	}
 	else if (CPUType == ECPUType::M6502 || CPUType == ECPUType::HuC6280)
 	{
