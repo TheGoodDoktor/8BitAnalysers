@@ -125,13 +125,13 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 {
 	if (MemorySource == EPCEMemorySource::VRAM)
-		return FAddressRef();
+		return FAddressRef::Invalid();
 
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	const int16_t bankId = (MemorySource == EPCEMemorySource::WRAM) ? WRAMBankId : SelectedBankId;
 	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
 	if (pBank == nullptr || pGraphicView == nullptr)
-		return FAddressRef();
+		return FAddressRef::Invalid();
 
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
 	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
@@ -186,11 +186,32 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 {
 	ComboBankIds.clear();
 
-	// ROM banks
-	for (int i = 0; i < FPCEEmu::kNumRomBanks; i++)
+	int bankStart = 0;
+	int bankCount = FPCEEmu::kNumRomBanks;
+
+	if (pPCEEmu->IsCDROM())
+	{
+		if (MemorySource == EPCEMemorySource::CD_RAM)
+		{
+			bankStart = 0x80;
+			bankCount = 8;
+		}
+		else if (MemorySource == EPCEMemorySource::CARD_RAM)
+		{
+			bankStart = pPCEEmu->GetMemory()->GetCardRAMStart();
+			bankCount = pPCEEmu->GetMemory()->GetCardRAMSize() / 0x2000;
+		}
+		else if (MemorySource == EPCEMemorySource::ROM_BIOS)
+		{
+			bankCount = pPCEEmu->GetBankCount();
+		}
+	}
+
+	const int bankEnd = bankStart + bankCount;
+	for (int i = bankStart; i < bankEnd; i++)
 	{
 		FBankSet* pBankSet = pPCEEmu->Banks[i];
-		const int16_t bankId = pBankSet->GetBankId(0);
+		const int16_t bankId = pBankSet->GetBankId();
 		if (std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId) == ComboBankIds.end())
 		{
 			if (state.GetBank(bankId) != nullptr)
@@ -201,25 +222,28 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 	// WRAM
 	{
 		FBankSet* pBankSet = pPCEEmu->Banks[kBankWRAM0];
-		WRAMBankId = pBankSet->GetBankId(0);
+		WRAMBankId = pBankSet->GetBankId();
 	}
 
-	if (!ComboBankIds.empty())
+	EnsureValidBankSelection();
+}
+
+void FPCENewGraphicsViewer::EnsureValidBankSelection(bool bForceFirst)
+{
+	if (ComboBankIds.empty())
+		return;
+
+	if (bForceFirst || SelectedBankIndex < 0 || SelectedBankIndex >= (int)ComboBankIds.size())
 	{
-		if (SelectedBankIndex < 0 || SelectedBankIndex >= ComboBankIds.size())
-		{
-			SelectedBankIndex = 0;
-			SelectedBankId = ComboBankIds[0];
-			bGraphicViewDirty = true;
-		}
+		SelectedBankIndex = 0;
+		SelectedBankId = ComboBankIds[0];
+		bGraphicViewDirty = true;
 	}
 }
 
 void FPCENewGraphicsViewer::DrawUI(void)
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
-
-	PopulateBankList(state);
 
 	EPCEGraphicsViewMode newViewMode = ViewMode;
 	if (ImGui::RadioButton("Sprites", ViewMode == EPCEGraphicsViewMode::Sprites))
@@ -234,21 +258,38 @@ void FPCENewGraphicsViewer::DrawUI(void)
 		bGraphicViewDirty = true;
 	}
 
+	const bool bCD = pPCEEmu->IsCDROM();
 	static const char* kMemorySourceNames[] = { "ROM", "WRAM", "VRAM" };
+	static const char* kMemorySourceNamesCD[] = { "BIOS", "WRAM", "VRAM", "CD RAM", "CARD RAM" };
+	const int numComboItems = bCD ? IM_ARRAYSIZE(kMemorySourceNamesCD) : IM_ARRAYSIZE(kMemorySourceNames);
+	// Make sure an unsupported memory source isn't selected.
+	// This can happen when either CD RAM or CARD RAM is selected and you load a rom based game.
+	// todo: reset memory source on loading a new game
+	MemorySource = (EPCEMemorySource)std::min(numComboItems - 1, (int)MemorySource);
 	int memorySourceIndex = (int)MemorySource;
-	if (ImGui::Combo("Memory", &memorySourceIndex, kMemorySourceNames, IM_ARRAYSIZE(kMemorySourceNames)))
+	bool bChangedMemorySource = false;
+	if (ImGui::Combo("Memory", &memorySourceIndex, bCD ? kMemorySourceNamesCD : kMemorySourceNames, numComboItems))
 	{
 		MemorySource = (EPCEMemorySource)memorySourceIndex;
 		DisplayAddress = 0;
 		bGraphicViewDirty = true;
+		
+		bChangedMemorySource = true;
 	}
 
-	const bool bBankSelectable = (MemorySource == EPCEMemorySource::ROM);
+	PopulateBankList(state);
+
+	// Select the first bank in the bank combo when switching memory source.
+	// todo: make this logic more user-friendly
+	EnsureValidBankSelection(bChangedMemorySource);
+
+	const bool bCanSelectBanks = MemorySource == EPCEMemorySource::ROM_BIOS || 
+		(bCD && (MemorySource == EPCEMemorySource::CD_RAM || MemorySource == EPCEMemorySource::CARD_RAM));
 
 	const FCodeAnalysisBank* pSelectedBank = state.GetBank(SelectedBankId);
 	const char* pSelectedName = pSelectedBank != nullptr ? pSelectedBank->Name.c_str() : "None";
 
-	ImGui::BeginDisabled(!bBankSelectable);
+	ImGui::BeginDisabled(!bCanSelectBanks);
 
 	//ImGui::SetNextItemWidth(ImGui_GetFontCharWidth() * 16);
 	if (ImGui::BeginCombo("##Bank", pSelectedName))
@@ -315,15 +356,9 @@ void FPCENewGraphicsViewer::DrawUI(void)
 	int sourceSizeBytes = 0;
 	if (MemorySource == EPCEMemorySource::VRAM)
 		sourceSizeBytes = HUC6270_VRAM_SIZE * sizeof(u16);
-	else if (MemorySource == EPCEMemorySource::WRAM)
-	{
-		const FCodeAnalysisBank* pWRAMBank = state.GetBank(WRAMBankId);
-		sourceSizeBytes = (pWRAMBank != nullptr) ? pWRAMBank->GetSizeBytes() : 0;
-	}
 	else
-	{
 		sourceSizeBytes = (pSelectedBank != nullptr) ? pSelectedBank->GetSizeBytes() : 0;
-	}
+	
 	const int maxBlocks = std::max(0, sourceSizeBytes - DisplayAddress) / blockBytes;
 
 	if (ImGui::InputInt("View Width", &ViewWidth, blockSizePixels, blockSizePixels))
@@ -396,7 +431,6 @@ void FPCENewGraphicsViewer::DrawUI(void)
 			}
 		}
 	}
-
 }
 
 void FPCENewGraphicsViewer::DrawPaletteListBox()
@@ -445,7 +479,7 @@ void FPCENewGraphicsViewer::GoToAddress(FAddressRef address)
 {
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 
-	// Populate bank lists so WRAMBankId and BankIdsForBankCombo are current.
+	// Populate bank lists so WRAMBankId is current.
 	PopulateBankList(state);
 
 	const int16_t bankId = address.GetBankId();
@@ -454,18 +488,35 @@ void FPCENewGraphicsViewer::GoToAddress(FAddressRef address)
 	{
 		MemorySource = EPCEMemorySource::WRAM;
 		DisplayAddress = address.GetAddress();
+		bGraphicViewDirty = true;
+		return;
 	}
-	else
+
+	// ComboBankIds is only populated for the currently selected memory source, so
+	// try each bank-selectable source in turn until we find the one that has this bank.
+	const EPCEMemorySource originalMemorySource = MemorySource;
+	const bool bCD = pPCEEmu->IsCDROM();
+	const EPCEMemorySource bankSources[] = { EPCEMemorySource::ROM_BIOS, EPCEMemorySource::CD_RAM, EPCEMemorySource::CARD_RAM };
+	for (const EPCEMemorySource source : bankSources)
 	{
+		if (!bCD && source != EPCEMemorySource::ROM_BIOS)
+			continue;
+
+		MemorySource = source;
+		PopulateBankList(state);
+
 		const auto it = std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId);
 		if (it != ComboBankIds.end())
 		{
-			MemorySource = EPCEMemorySource::ROM;
 			SelectedBankId = bankId;
 			SelectedBankIndex = (int)(it - ComboBankIds.begin());
 			DisplayAddress = address.GetAddress();
+			bGraphicViewDirty = true;
+			return;
 		}
 	}
 
-	bGraphicViewDirty = true;
+	// Bank not found in any selectable source - leave the viewer as it was.
+	MemorySource = originalMemorySource;
+	PopulateBankList(state);
 }

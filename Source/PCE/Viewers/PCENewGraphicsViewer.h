@@ -16,9 +16,11 @@ enum class EPCEGraphicsViewMode
 
 enum class EPCEMemorySource
 {
-	ROM,
+	ROM_BIOS, // ROM or BIOS
 	WRAM,
 	VRAM,
+	CD_RAM,
+	CARD_RAM
 };
 
 class FPCENewGraphicsViewer : public FGraphicsViewerBase
@@ -37,6 +39,8 @@ private:
 	void	PopulateBankList(const FCodeAnalysisState& state);
 	void	DrawPaletteListBox();
 
+	void	EnsureValidBankSelection(bool bForceFirst = false);
+
 	// Get the address corresponding to a pixel position in the graphic view (ROM/WRAM sources)
 	FAddressRef	GetAddressFromPos(int xp, int yp) const;
 
@@ -49,7 +53,7 @@ private:
 
 	FGraphicsView*	pGraphicView = nullptr;
 	EPCEGraphicsViewMode	ViewMode = EPCEGraphicsViewMode::Sprites;
-	EPCEMemorySource	MemorySource = EPCEMemorySource::ROM;
+	EPCEMemorySource	MemorySource = EPCEMemorySource::ROM_BIOS;
 	int16_t			SelectedBankId = -1;
 	int				SelectedBankIndex = -1;	// index into ComboBankIds
 	int16_t			WRAMBankId = -1;
