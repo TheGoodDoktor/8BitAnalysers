@@ -58,7 +58,7 @@ private:
 	void DrawHistoryDetails(int index);
 	void DrawSearchTab();
 	void FormatEntry(FHistorySpriteEntry& e);
-	void ExportFoundSpritesAsPNGs();
+	void ExportSpritesAsPNGs();
 
 private:
 	static const int kNumSprites = 64;
