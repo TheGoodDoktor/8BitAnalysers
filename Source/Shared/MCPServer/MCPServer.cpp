@@ -7,6 +7,16 @@
 
 static const std::string kServerVersion = "1.0";
 
+// sam. Safe way to get request id. Fixes a crash when id is not a number. 
+// Returns 0 when not a number.
+static int64_t GetRequestId(const nlohmann::json& request)
+{
+	if (request.contains("id") && request["id"].is_number_integer())
+		return request["id"].get<int64_t>();
+
+	return 0;
+}
+
 std::string g_ServerName = "analyser";
 
 void SetMCPServerName(const std::string& name)
@@ -259,8 +269,7 @@ void FMCPServer::HandleLine(const std::string& line)
 	}
 	else
 	{
-		int64_t id = request.contains("id") ? request["id"].get<int64_t>() : 0;
-		SendError(id, -32601, "Method not found: " + method);
+		SendError(GetRequestId(request), -32601, "Method not found: " + method);
 	}
 
 }
@@ -311,7 +320,7 @@ void FMCPServer::HandleInitialise(const nlohmann::json& request)
 		return;
 	}
 
-	const int64_t id = request["id"].get<int64_t>();
+	const int64_t id = GetRequestId(request);
 
 	// Get protocol version
 	std::string protocolVersion = "1.0";
@@ -349,7 +358,7 @@ void FMCPServer::HandleToolsList(const nlohmann::json& request)
 		return;
 	}
 
-	const int64_t id = request["id"].get<int64_t>();
+	const int64_t id = GetRequestId(request);
 	nlohmann::json toolsArray = nlohmann::json::array();
 
 	pToolsRegistry->GenerateToolsList(toolsArray);
@@ -372,7 +381,7 @@ void FMCPServer::HandleToolsCall(const nlohmann::json& request)
 		return;
 	}
 
-	int64_t id = request["id"];
+	int64_t id = GetRequestId(request);
 
 	if (!request.contains("params") || !request["params"].contains("name"))
 	{
@@ -441,7 +450,7 @@ void FMCPServer::HandleResourcesList(const nlohmann::json& request)
 		SendError(0, -32600, "Invalid Request: missing id");
 		return;
 	}
-	const int64_t id = request["id"].get<int64_t>();
+	const int64_t id = GetRequestId(request);
 	nlohmann::json resourcesJson = nlohmann::json::array();
 
 	pResourcesRegistry->GenerateResourcesList(resourcesJson);
@@ -475,7 +484,7 @@ void FMCPServer::HandleResourcesRead(const nlohmann::json& request)
 		return;
 	}
 	
-	const int64_t id = request["id"].get<int64_t>();
+	const int64_t id = GetRequestId(request);
 	if (!request.contains("params") || !request["params"].contains("uri"))
 	{
 		SendError(id, -32602, "Invalid Request: missing uri parameter");
