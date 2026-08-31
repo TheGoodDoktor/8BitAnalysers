@@ -36,7 +36,7 @@ void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
 	assert(FirstDataTrackLBA != kInvalidLBA);
 
 	CdRomMedia* pMedia = pPCEEmu->GetCore()->GetCDROMMedia();
-	const uint32_t absoluteLBA = (args.CDByteOffset / 2048) + FirstDataTrackLBA;
+	const uint32_t absoluteLBA = args.LBAOffset + FirstDataTrackLBA;
 	const s32 trackIndex = pMedia->GetTrackFromLBA(absoluteLBA);
 	if (trackIndex < 0)
 		return;
@@ -48,7 +48,7 @@ void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
 	const FAddressRef destAddr = state.AddressRefFromPhysicalAddress(args.PhysicalAddr);
 
 	FCDROMTransfer transfer;
-	transfer.CDByteOffset = args.CDByteOffset;
+	transfer.LBAOffset    = args.LBAOffset;
 	transfer.DestAddr     = destAddr;
 	transfer.SizeInBytes  = static_cast<uint16_t>(args.TransferSizeBytes);
 	transfer.TrackIndex   = trackIndex;
@@ -56,7 +56,7 @@ void FCDROMAnalyser::RegisterCDRead(const FBiosCDReadArgs& args)
 	TrackTransfers[trackIndex].push_back(transfer);
 
 	const FCodeAnalysisBank* pBank = state.GetBank(destAddr.GetBankId());
-	LOGINFO("CD_READ [Track %d] %d bytes from %x -> %s %x", trackIndex, transfer.SizeInBytes, transfer.CDByteOffset, pBank ? pBank->Name.c_str() : "UNKNOWN", transfer.DestAddr.GetAddress());
+	LOGINFO("CD_READ [Track %d] %d bytes from LBA %d -> %s %x", trackIndex, transfer.SizeInBytes, transfer.LBAOffset, pBank ? pBank->Name.c_str() : "UNKNOWN", transfer.DestAddr.GetAddress());
 }
 
 const uint16_t zipBaseAddr = 0x2000;
@@ -82,7 +82,7 @@ bool GetBiosCDReadArgs(FPCEEmu* pEmu, FBiosCDReadArgs& args)
 	const uint8_t clByte = pEmu->ReadByte(_cl); // $fc
 	const uint8_t chByte = pEmu->ReadByte(_ch); // $fd
 	const uint8_t dlByte = pEmu->ReadByte(_dl); // $fe
-	args.CDByteOffset =  (dlByte + (chByte << 8) + (clByte << 16)) * 2048;
+	args.LBAOffset = dlByte + (chByte << 8) + (clByte << 16);
 
 	switch (mode)
 	{

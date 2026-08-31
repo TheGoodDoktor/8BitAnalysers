@@ -17,12 +17,12 @@ struct FBiosCDReadArgs
 	EBiosCDReadDest Destination = EBiosCDReadDest::Unknown;
 	uint32_t TransferSizeBytes = 0;
 	uint16_t PhysicalAddr = 0;
-	uint32_t CDByteOffset = 0;
+	uint32_t LBAOffset = 0; // sector number relative to the first data track
 };
 
 struct FCDROMTransfer
 {
-	uint32_t CDByteOffset = 0; // is this better in cd sectors?
+	uint32_t LBAOffset = 0; // sector number relative to the first data track
 	FAddressRef DestAddr = FAddressRef::Invalid(); // start address of where the data was written to in memory.
 	uint16_t SizeInBytes = 0; // size of data that was transferred.
 	int TrackIndex = -1; // 0-based index into the disc TOC
@@ -47,7 +47,7 @@ public:
 private:
 	std::vector<TCDTransferList> TrackTransfers; // one list per data track, indexed by track number
 
-	uint32_t FirstDataTrackLBA = kInvalidLBA;
+	uint32_t FirstDataTrackLBA = kInvalidLBA; // only 19 bits are used
 
 	FPCEEmu* pPCEEmu = nullptr;
 };

@@ -77,6 +77,32 @@ void FCDROMViewer::DetectDataReads()
 	}
 }
 
+// Custom 24 bit version of NumStr for LBA offsets. 
+const char* NumStr24Bit(uint32_t num, ENumberDisplayMode numDispMode)
+{
+	const int kTextLength = 10;
+	static char gBuffer[kTextLength];
+
+	switch (numDispMode)
+	{
+	case ENumberDisplayMode::Decimal:
+		snprintf(gBuffer, kTextLength, "%u", num);
+		return gBuffer;
+
+	case ENumberDisplayMode::HexAitch:
+		snprintf(gBuffer, kTextLength, "%06Xh", num);
+		return gBuffer;
+
+	case ENumberDisplayMode::HexDollar:
+		snprintf(gBuffer, kTextLength, "$%06X", num);
+		return gBuffer;
+
+	default:
+		assert(0);
+		return nullptr;
+	}
+}
+
 void FCDROMViewer::DrawUI(void)
 {
 	if (!pPCEEmu->IsCDROM())
@@ -86,7 +112,8 @@ void FCDROMViewer::DrawUI(void)
 	}
 
 	const FCDROMAnalyser* pCDROMAnalyser = pPCEEmu->GetCDROMAnalyser();
-	ImGui::Text("First Data Track LBA: %x", pCDROMAnalyser->GetFirstDataTrackLBA());
+	const char* pText = NumStr24Bit(pCDROMAnalyser->GetFirstDataTrackLBA(), GetNumberDisplayMode());
+	ImGui::Text("First Data Track LBA: %s", pText);
 
 	CdRomMedia* pCdRomMedia = pPCEEmu->GetCore()->GetCDROMMedia();
 	const auto& tracks = pCdRomMedia->GetTracks();
@@ -208,7 +235,7 @@ void FCDROMViewer::DrawTransferLogTab()
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("Track",       ImGuiTableColumnFlags_WidthFixed,   fontWidth * 6.0f);
-		ImGui::TableSetupColumn("CD Offset",   ImGuiTableColumnFlags_WidthFixed,   fontWidth * 10.0f);
+		ImGui::TableSetupColumn("LBA Offset",  ImGuiTableColumnFlags_WidthFixed,   fontWidth * 10.0f);
 		ImGui::TableSetupColumn("Size",        ImGuiTableColumnFlags_WidthFixed,   fontWidth * 8.0f);
 		ImGui::TableSetupColumn("Destination", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableHeadersRow();
@@ -223,7 +250,8 @@ void FCDROMViewer::DrawTransferLogTab()
 				ImGui::Text("%d", transfer.TrackIndex + 1);
 
 				ImGui::TableSetColumnIndex(1);
-				ImGui::Text("%08X", transfer.CDByteOffset);
+				const char* pText = NumStr24Bit(transfer.LBAOffset, GetNumberDisplayMode());
+				ImGui::Text("%s", pText);
 
 				ImGui::TableSetColumnIndex(2);
 				ImGui::Text("%u", transfer.SizeInBytes);
