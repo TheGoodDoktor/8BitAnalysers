@@ -2163,6 +2163,21 @@ void FPCEEmu::GlobalShortcuts(void)
 		ExportAsmForCurrentGame();
 	if (pCurrentProjectConfig && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_R))
 		SoftResetMachine();
+	
+	// Toggle number base with Ctrl & B
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_B))
+	{
+		ENumberDisplayMode numDisplayMode = GetNumberDisplayMode();
+		if (numDisplayMode == ENumberDisplayMode::Decimal)
+			numDisplayMode = ENumberDisplayMode::HexAitch;
+		else if (numDisplayMode == ENumberDisplayMode::HexAitch)
+			numDisplayMode = ENumberDisplayMode::HexDollar;
+		else if (numDisplayMode == ENumberDisplayMode::HexDollar)
+			numDisplayMode = ENumberDisplayMode::Decimal;
+		else
+			assert(0); // unsupported num display mode
+		SetNumberDisplayMode(numDisplayMode);
+	}
 }
 
 // todo: get this working on CD games
