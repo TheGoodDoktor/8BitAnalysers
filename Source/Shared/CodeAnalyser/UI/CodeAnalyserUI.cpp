@@ -1697,7 +1697,7 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 {
 	const float glyphWidth = ImGui_GetFontCharWidth();
 
-	if (ImGui::ArrowButton("##btnprev", ImGuiDir_Left))
+	if (ImGui::ArrowButton("##btnprev", ImGuiDir_Left) || ImGui::IsMouseClicked(3))
 		viewState.GoToPreviousAddress();
 	ImGui::SameLine();
 	if (ImGui::ArrowButton("##btnnext", ImGuiDir_Right))
