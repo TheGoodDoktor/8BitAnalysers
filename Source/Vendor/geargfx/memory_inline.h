@@ -47,11 +47,9 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
     u8 bank = m_mpr[mpr_index];
     u16 offset = address & 0x1FFF;
 
-    // sam. add callback for memory reads.
-    // we want this to fire every time the cpu reads memory for the
-    // analyser to register the read has happened.
-    // Memory::Read() is also called from the code analysis UI code to display the memory.
-    // we dont want this callback to fire in that case.
+    // sam. Add callback for memory reads. This will fire every time the cpu reads memory.
+    // Memory::Read() is also called from the code analysis UI code to read and display the memory.
+    // We dont want this callback to fire in that case.
     if (is_cpu)
         m_memory_read_callback(m_callback_context, address);
 
@@ -64,8 +62,8 @@ INLINE u8 Memory::Read(u16 address, bool is_cpu, bool block_transfer)
     }
     else
     {
-        // sam. reading of HW page memory can inject cyles and assert IRQs etc.
-        // we dont want to do any emulation operations here if we are reading memory for the UI.
+        // sam. Reading of HW page memory can inject cyles and assert IRQs etc.
+        // We dont want to do any emulation operations here if we are reading memory for the UI.
         // todo: deal with this better.
         if (!is_cpu)
         {
