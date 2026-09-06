@@ -30,6 +30,19 @@ class HuC6260;
 class HuC6280;
 class SixteenBitRegister;
 
+// sam. Moved out of class so we can forward declare it.
+struct HuC6270_State
+{
+    u16* AR;
+    u16* SR;
+    u16* R;
+    u16* READ_BUFFER;
+    s32* HPOS;
+    s32* VPOS;
+    s32* V_STATE;
+    s32* H_STATE;
+};
+
 class HuC6270
 {
 public:
@@ -60,17 +73,6 @@ public:
         HuC6270_EVENT_RCR
     };
 
-    struct HuC6270_State
-    {
-        u16* AR;
-        u16* SR;
-        u16* R;
-        u16* READ_BUFFER;
-        s32* HPOS;
-        s32* VPOS;
-        s32* V_STATE;
-        s32* H_STATE;
-    };
 
 
 public:

@@ -125,7 +125,8 @@ void HuC6280::Reset()
     ClearDisassemblerCallStack();
 }
 
-HuC6280::HuC6280_State* HuC6280::GetState()
+// sam. Moved HuC6280_State out of HuC6280 class
+HuC6280_State* HuC6280::GetState()
 {
     return &m_processor_state;
 }

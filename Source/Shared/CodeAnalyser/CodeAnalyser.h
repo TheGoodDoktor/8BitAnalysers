@@ -277,6 +277,15 @@ struct FCodeAnalysisConfig
 	int		BranchLinesPerIndent = 5;
 	bool	bHideDupeBanks = true;
 	bool	bRedirectDupeBankAccess = true;
+
+	// sam. Added support for disabling data types per platform.
+	bool	bSupportedDataTypes[(int)EDataType::Max];
+
+	FCodeAnalysisConfig()
+	{
+		for (bool& bSupported : bSupportedDataTypes)
+			bSupported = true;
+	}
 };
 
 // sam. Refactored to remove memory allocations.

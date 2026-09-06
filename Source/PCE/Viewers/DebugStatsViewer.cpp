@@ -273,9 +273,9 @@ void FDebugStatsViewer::DrawBankList()
 	constexpr ImVec4 yellowColour(1.0f, 1.0f, 0.0f, 1.0f);
 	constexpr ImVec4 greenColour(0.0f, 1.0f, 0.0f, 1.0f);
 
-	for (int i = 0; i < FPCEEmu::kNumBanks; i++)
+	for (int i = 0; i < FPCEEmu::kNumHwBanks; i++)
 	{
-		if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->BankSetPtrs[i]->GetBankId(0)))
+		if (const FCodeAnalysisBank* pBank = state.GetBank(pPCEEmu->GetBankSetPtr(i)->GetBankId(0)))
 		{
 			const uint8_t* gearGfxMem = pPCEEmu->GetMemory()->GetMemoryMap()[i];
 

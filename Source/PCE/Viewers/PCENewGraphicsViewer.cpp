@@ -11,6 +11,8 @@
 #include "../PCEEmu.h"
 #include "../BankSet.h"
 
+#include "geargrafx_core.h"
+
 static const int kBytesPerSpriteBlock = 128;	// 4bpp 16x16 planar sprite
 static const int kBytesPerBGTile      = 32;	// 4bpp 8x8 planar BG tile
 
@@ -125,13 +127,13 @@ void FPCENewGraphicsViewer::UpdateGraphicView()
 FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 {
 	if (MemorySource == EPCEMemorySource::VRAM)
-		return FAddressRef();
+		return FAddressRef::Invalid();
 
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	const int16_t bankId = (MemorySource == EPCEMemorySource::WRAM) ? WRAMBankId : SelectedBankId;
 	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
-	if (pBank == nullptr || pGraphicView == nullptr)
-		return FAddressRef();
+	if (pBank == nullptr || pGraphicView == nullptr || pBank->PrimaryMappedPage == -1)
+		return FAddressRef::Invalid();
 
 	const int blockBytes = (ViewMode == EPCEGraphicsViewMode::Sprites) ? kBytesPerSpriteBlock : kBytesPerBGTile;
 	const int blockSizePixels = (ViewMode == EPCEGraphicsViewMode::Sprites) ? 16 : 8;
@@ -189,7 +191,7 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 	// ROM banks
 	for (int i = 0; i < FPCEEmu::kNumRomBanks; i++)
 	{
-		FBankSet* pBankSet = pPCEEmu->BankSetPtrs[i];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(i);
 		const int16_t bankId = pBankSet->GetBankId(0);
 		if (std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId) == ComboBankIds.end())
 		{
@@ -200,7 +202,7 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 
 	// WRAM
 	{
-		FBankSet* pBankSet = pPCEEmu->BankSetPtrs[kBankWRAM0];
+		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(kBankWRAM0);
 		WRAMBankId = pBankSet->GetBankId(0);
 	}
 

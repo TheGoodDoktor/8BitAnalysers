@@ -14,26 +14,28 @@
 
 #include "Misc/EmuBase.h"
 
+#include "geargrafx_core.h"
+
 static const int kMemoryViewImageWidth  = 128;
 static const int kMemoryViewImageHeight = 256;
 
 static const int kVRAMTileViewWidth   = 256;   // 32 tiles across
 static const int kVRAMSpriteViewWidth = 256;   // 16 sprite blocks across
 
-static const u8 kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
+static const uint8_t kExpand3to8[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
 
 void DrawDataAccessIndicator(const ImVec2& pos, ImU32 fillCol, ImU32 brdCol, float lineHeight, float lh2);
 
 // Build a 16-entry RGBA palette from the HuC6260 colour table.
 // paletteBase is the colour table index of colour 0 for this palette.
-static void BuildHWPalette(const u16* colorTable, int paletteBase, uint32_t* out)
+static void BuildHWPalette(const uint16_t* colorTable, int paletteBase, uint32_t* out)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		const u16 cv = colorTable[paletteBase + i];
-		const u8 r = kExpand3to8[(cv >> 3) & 7];
-		const u8 g = kExpand3to8[(cv >> 6) & 7];
-		const u8 b = kExpand3to8[cv & 7];
+		const uint16_t cv = colorTable[paletteBase + i];
+		const uint8_t r = kExpand3to8[(cv >> 3) & 7];
+		const uint8_t g = kExpand3to8[(cv >> 6) & 7];
+		const uint8_t b = kExpand3to8[cv & 7];
 		out[i] = 0xFF000000u | ((uint32_t)b << 16) | ((uint32_t)g << 8) | r;
 	}
 }
@@ -42,7 +44,7 @@ static void BuildGreyscalePalette(uint32_t* out)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		const u8 v = (u8)(i * 17);
+		const uint8_t v = (uint8_t)(i * 17);
 		out[i] = 0xFF000000u | ((uint32_t)v << 16) | ((uint32_t)v << 8) | v;
 	}
 }

@@ -1,6 +1,7 @@
+
 struct FDebugLabel
 {
-	u16 Address;
+	uint16_t Address;
 	const char* Label;
 	const char* Comment = nullptr;
 };

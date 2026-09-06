@@ -1639,6 +1639,7 @@ void	FCodeAnalysisState::OnMachineFrameEnd()
 
 void FCodeAnalysisState::OnCPUTick(uint64_t pins)
 {
+#if USE_CHIPS // sam
 	// Only Z80 has IO operations
 	if(CPUInterface->CPUType == ECPUType::Z80)
 	{
@@ -1656,6 +1657,7 @@ void FCodeAnalysisState::OnCPUTick(uint64_t pins)
 	}
 
 	Debugger.CPUTick(pins);
+#endif
 }
 
 int gAddressRefsFixed = 0;

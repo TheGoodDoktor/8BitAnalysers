@@ -174,16 +174,9 @@ public:
 		return p6280State->P->SetValue(val);
 	}
 
-	HuC6280::HuC6280_State* p6280State = nullptr;
+	HuC6280_State* p6280State = nullptr;
 	FPCEEmu* pPCEEmu = nullptr;
 };
-
-// Hack to fix undefined symbol linker error.
-// This function is used in Debugger.cpp
-bool z80_opdone(z80_t* cpu) 
-{
-	return false;
-}
 
 uint8_t FPCEEmu::ReadByte(uint16_t address) const
 {
@@ -423,7 +416,7 @@ static void BankChangeCallback(void* pContext, u8 mprIndex, u8 oldBankIndex, u8 
 
 	const int bankSetIndex = pEmu->MprBankSet[mprIndex];
 	if (bankSetIndex != -1)
-		pEmu->BankSetPtrs[bankSetIndex]->SetBankFreed(mprIndex);
+		pEmu->GetBankSetPtr(bankSetIndex)->SetBankFreed(mprIndex);
 
 	pEmu->MapMprBank(mprIndex, newBankIndex);
 }
@@ -737,9 +730,14 @@ void FPCEEmu::EnableGeargrafxCallbacks(bool bEnabled)
 	}
 }
 
-const FBankSet& FPCEEmu::GetBankSet(int index)
+const FBankSet& FPCEEmu::GetBankSet(int hwBankIndex) const
 {
-	return BankSets[index];
+	return BankSets[hwBankIndex];
+}
+
+FBankSet* FPCEEmu::GetBankSetPtr(int hwBankIndex) const
+{
+	return BankSetPtrs[hwBankIndex];
 }
 
 int FPCEEmu::GetGameBankCount() const
@@ -1235,6 +1233,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	CodeAnalysis.Config.RomType = ESystemRom::None;
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::CharacterMap] = false;	// Character map feature isn't working on PCE yet - hide it from the user.
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::ColAttr] = false;	// ColAttr is ZX Spectrum specific (I think)
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::Struct] = false;	// Structs don't work properly yet.
 
 #if CDROM_SUPPORT
 	// todo: check this is system card 3.0.
@@ -2162,6 +2163,21 @@ void FPCEEmu::GlobalShortcuts(void)
 		ExportAsmForCurrentGame();
 	if (pCurrentProjectConfig && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_R))
 		SoftResetMachine();
+	
+	// Toggle number base with Ctrl & B
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_B))
+	{
+		ENumberDisplayMode numDisplayMode = GetNumberDisplayMode();
+		if (numDisplayMode == ENumberDisplayMode::Decimal)
+			numDisplayMode = ENumberDisplayMode::HexAitch;
+		else if (numDisplayMode == ENumberDisplayMode::HexAitch)
+			numDisplayMode = ENumberDisplayMode::HexDollar;
+		else if (numDisplayMode == ENumberDisplayMode::HexDollar)
+			numDisplayMode = ENumberDisplayMode::Decimal;
+		else
+			assert(0); // unsupported num display mode
+		SetNumberDisplayMode(numDisplayMode);
+	}
 }
 
 // todo: get this working on CD games

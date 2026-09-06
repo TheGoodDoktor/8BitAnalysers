@@ -67,6 +67,7 @@ void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 	{
 		case ECPUType::Z80:
 		{
+#if USE_CHIPS // sam
 			const z80_t* pZ80 = (const z80_t*)state.GetCPUInterface()->GetCPUEmulator()->GetImpl();
 
 			switch (param.Z80Source)
@@ -108,6 +109,7 @@ void CaptureFunctionParam(FCodeAnalysisState& state, FFunctionParam& param)
 				value = pZ80->iy;
 				break;
 			}
+#endif // #if USE_CHIPS // sam
 			break;
 		}
 		case ECPUType::M6502:

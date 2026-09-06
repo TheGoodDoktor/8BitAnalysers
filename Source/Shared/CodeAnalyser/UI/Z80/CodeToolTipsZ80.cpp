@@ -1,4 +1,6 @@
 #include "CodeToolTipsZ80.h"
+
+#if USE_CHIPS // sam
 #include "../CodeToolTips.h"
 #include "../../CodeAnalyser.h"
 #include "../CodeAnalyserUI.h"
@@ -1622,3 +1624,6 @@ void ShowCodeToolTipZ80(FCodeAnalysisState& state, uint16_t addr)
 	
 	ImGui::EndTooltip();
 }
+#else
+void ShowCodeToolTipZ80(class FCodeAnalysisState& state, uint16_t addr) {}
+#endif // #if USE_CHIPS // sam

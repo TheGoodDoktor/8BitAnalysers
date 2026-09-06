@@ -664,7 +664,7 @@ void FSpriteViewer::DrawSearchTab()
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Export PNGs"))
-			ExportFoundSpritesAsPNGs();
+			ExportSpritesAsPNGs();
 	}
 
 	ImGui::Separator();
@@ -1051,7 +1051,7 @@ void FSpriteViewer::DrawSpriteDetails(int spriteIndex)
 	}
 }
 
-void FSpriteViewer::ExportFoundSpritesAsPNGs()
+void FSpriteViewer::ExportSpritesAsPNGs()
 {
 	const std::string outDir = pPCEEmu->GetGameWorkspaceRoot() + "Sprites/";
 	EnsureDirectoryExists(outDir.c_str());

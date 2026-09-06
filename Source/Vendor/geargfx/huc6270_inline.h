@@ -55,7 +55,8 @@ INLINE u16 HuC6270::Clock()
     return pixel;
 }
 
-INLINE HuC6270::HuC6270_State* HuC6270::GetState()
+// sam. Moved HuC6270_State out of HuC6270 class
+INLINE HuC6270_State* HuC6270::GetState()
 {
     return &m_state;
 }

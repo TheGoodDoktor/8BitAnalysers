@@ -5,6 +5,8 @@
 #include "CodeAnalyser/CodeAnalyser.h"
 #include "huc6270_defines.h"
 
+#include "geargrafx_core.h"
+
 FMemoryViewer::FMemoryViewer(FEmuBase* pEmu)
 	: FViewerBase(pEmu)
 {

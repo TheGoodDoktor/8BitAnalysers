@@ -2,8 +2,8 @@
 #include "../CodeAnalyser.h"
 #include <cassert>
 
+#if USE_CHIPS // sam
 #include "chips/z80.h"
-
 
 bool CheckPointerIndirectionInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr)
 {
@@ -616,3 +616,19 @@ void FillCodeInfoOperandsZ80(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* 
 			pLabel->References.RegisterAccess(pcAddrRef);
 	}
 }
+#else
+bool CheckPointerIndirectionInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr) { return false; }
+bool CheckPointerRefInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr) { return false; }
+bool CheckJumpInstructionZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t* out_addr) { return false; }
+bool ResolveJumpDestinationAddressZ80(const FCodeAnalysisState& state, uint16_t pc, uint16_t operandAddr, uint16_t* out_addr) { return false; }
+bool CheckCallInstructionZ80(const FCodeAnalysisState& state, uint16_t pc) { return false; }
+bool CheckStopInstructionZ80(const FCodeAnalysisState& state, uint16_t pc) { return false; }
+bool RegisterCodeExecutedZ80(FCodeAnalysisState& state, uint16_t pc, uint16_t oldpc) { return false; }
+void FillCodeInfoOperandsZ80(FCodeAnalysisState& state, uint16_t pc, FCodeInfo* pCodeInfo) {}
+
+FMachineStateZ80* AllocateMachineStateZ80() { FMachineStateZ80* pNewState = nullptr; return pNewState; }
+void FreeMachineStatesZ80() {}
+void CaptureMachineStateZ80(FMachineState* pMachineState, ICPUInterface* pCPUInterface) {}
+
+EInstructionType GetInstructionTypeZ80(FCodeAnalysisState& state, FAddressRef addr) { return EInstructionType::Unknown; }
+#endif // #if USE_CHIPS // sam

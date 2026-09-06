@@ -1,3 +1,4 @@
+#if USE_CHIPS // sam
 #include <chips/z80.h>
 #include "../../CodeAnalyser.h"
 
@@ -28,3 +29,4 @@ struct FZ80DisplayRegisters
 
 void StoreRegisters_Z80(FCodeAnalysisState& state);
 const FZ80DisplayRegisters& GetStoredRegisters_Z80(void);
+#endif
