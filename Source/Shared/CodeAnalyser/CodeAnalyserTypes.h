@@ -365,7 +365,7 @@ public:
 
 private:
 	int Count = 0;
-	int WriteCounter = 0;
+	uint32_t WriteCounter = 0;
 
 	FAddressRef References[kMaxRefs];
 };
@@ -430,7 +430,7 @@ public:
 
 private:
 	int MaxEntryCount = 32;
-	int WriteCounter = 0;
+	uint32_t WriteCounter = 0; // sam. Changed to unsigned so it doesn't go negative when wrapping around
 	std::vector<FAddressRef> References;
 };
 
