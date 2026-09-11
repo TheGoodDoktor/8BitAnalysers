@@ -441,6 +441,12 @@ bool GeargrafxCore::SaveState(std::ostream& stream, size_t& size, bool screensho
         m_adpcm->SaveState(stream);
     }
 
+    if (stream.fail())
+    {
+        Log("ERROR: Failed to serialize save state");
+        return false;
+    }
+
 #if defined(__LIBRETRO__)
     GG_SaveState_Header_Libretro header;
     header.magic = GG_SAVESTATE_MAGIC;
@@ -491,7 +497,14 @@ bool GeargrafxCore::SaveState(std::ostream& stream, size_t& size, bool screensho
     Debug("Save state header screenshot height: %d", header.screenshot_height);
 #endif
 
-    size = static_cast<size_t>(stream.tellp());
+    std::streampos position = stream.tellp();
+    if (position == std::streampos(-1))
+    {
+        Log("ERROR: Failed to calculate save state size");
+        return false;
+    }
+
+    size = static_cast<size_t>(position);
     size += sizeof(header);
 
 #if !defined(__LIBRETRO__)
@@ -500,6 +513,13 @@ bool GeargrafxCore::SaveState(std::ostream& stream, size_t& size, bool screensho
 #endif
 
     stream.write(reinterpret_cast<const char*>(&header), sizeof(header));
+
+    if (stream.fail())
+    {
+        Log("ERROR: Failed to write save state header");
+        return false;
+    }
+
     return true;
 }
 
@@ -647,6 +667,12 @@ bool GeargrafxCore::LoadState(std::istream& stream)
         m_adpcm->LoadState(stream);
     }
 
+	if (stream.fail())
+    {
+        Log("ERROR: Failed to unserialize save state");
+        return false;
+    }
+    
     return true;
 }
 
