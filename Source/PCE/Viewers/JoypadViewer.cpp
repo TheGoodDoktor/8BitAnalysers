@@ -18,64 +18,39 @@ bool FJoypadViewer::Init()
 	return true;
 }
 
+static void DrawButton(const char* label, bool& bPressed, GG_Keys key, FPCEEmu* pPCEEmu)
+{
+	const bool bWasPressed = bPressed;
+	if (bWasPressed)
+	{
+		const ImVec4 pressedColour(0.2f, 0.7f, 0.2f, 1.0f);
+		ImGui::PushStyleColor(ImGuiCol_Header, pressedColour);
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, pressedColour);
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, pressedColour);
+	}
+
+	const bool bChanged = ImGui::Selectable(label, &bPressed);
+
+	if (bWasPressed)
+		ImGui::PopStyleColor(3);
+
+	if (bChanged)
+	{
+		if (bPressed)
+			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, key);
+		else
+			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, key);
+	}
+}
+
 void FJoypadViewer::DrawUI()
 {
-	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
-	
-	if (ImGui::Selectable("Up", &bUpPressed))
-	{
-		if (bUpPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_UP);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_UP);
-	}
-	if (ImGui::Selectable("Down", &bDownPressed))
-	{
-		if (bDownPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_DOWN);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_DOWN);
-	}
-	if (ImGui::Selectable("Left", &bLeftPressed))
-	{
-		if (bLeftPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_LEFT);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_LEFT);
-	}
-	if (ImGui::Selectable("Right", &bRightPressed))
-	{
-		if (bRightPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_RIGHT);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_RIGHT);
-	}
-		if (ImGui::Selectable("Select", &bSelectPressed))
-	{
-		if (bSelectPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_SELECT);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_SELECT);
-	}
-	if (ImGui::Selectable("Run", &bRunPressed))
-	{
-		if (bRunPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_RUN);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_RUN);
-	}
-	if (ImGui::Selectable("I", &bIPressed))
-	{
-		if (bIPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_I);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_I);
-	}
-	if (ImGui::Selectable("II", &bIIPressed))
-	{
-		if (bIIPressed)
-			pPCEEmu->GetCore()->KeyPressed(GG_CONTROLLER_1, GG_KEY_II);
-		else
-			pPCEEmu->GetCore()->KeyReleased(GG_CONTROLLER_1, GG_KEY_II);
-	}
+	DrawButton("Up", bUpPressed, GG_KEY_UP, pPCEEmu);
+	DrawButton("Down", bDownPressed, GG_KEY_DOWN, pPCEEmu);
+	DrawButton("Left", bLeftPressed, GG_KEY_LEFT, pPCEEmu);
+	DrawButton("Right", bRightPressed, GG_KEY_RIGHT, pPCEEmu);
+	DrawButton("Select", bSelectPressed, GG_KEY_SELECT, pPCEEmu);
+	DrawButton("Run", bRunPressed, GG_KEY_RUN, pPCEEmu);
+	DrawButton("I", bIPressed, GG_KEY_I, pPCEEmu);
+	DrawButton("II", bIIPressed, GG_KEY_II, pPCEEmu);
 }
