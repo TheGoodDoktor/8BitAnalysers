@@ -54,7 +54,6 @@ private:
 	int				SelectedBankIndex = -1;	// index into ComboBankIds
 	int16_t			WRAMBankId = -1;
 	bool				bGraphicViewDirty = false;
-	int				GraphicViewScale = 1;
 	int				ViewWidth = 128;
 	int				ViewHeight = 128;
 	int				SelectedPaletteIndex = 0;	// index into the palette store (see GetPaletteFromPaletteNo)
