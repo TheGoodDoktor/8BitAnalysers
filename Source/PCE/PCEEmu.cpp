@@ -1595,7 +1595,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	LOGINFO("Load Project '%s'. bLoadGameData = %s", pGameConfig->Name.c_str(), bLoadGameData ? "True" : "False");
 
 	// Save the last game's bank mapping progress
-	// todo: remove in release build
 	// todo: we may not want to save asm validation results here unless automation mode is active.
 	// otherwise if we may overwrite a complete validation run when we load a new game.
 	SaveGameDbEntry();
@@ -1977,10 +1976,16 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 {
 	if (jsonDoc.contains("MprBankIds"))
 	{
+		LOGINFO("Mapping initial bank state");
+
 		const auto& mprBankIds = jsonDoc["MprBankIds"];
 		for (int i = 0; i < kNumMprSlots && i < (int)mprBankIds.size(); i++)
 		{
-			if (!MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]))
+			const int16_t bankId = mprBankIds[i];
+			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId);
+			LOGINFO("Mapping bank %03d '%s' to MPR slot %d", bankId, pBank ? pBank->Name.c_str() : "None", i);
+
+			if (!MapBankIdToMprSlot(i, bankId))
 			{
 				// The bank ids saved in the analysis json don't match the machine state we just restored. 
 				SetLastError("Failed to restore mpr bank mapping for slot %d, bank id %d. Project data may be out of sync with the machine state.", i, (int16_t)mprBankIds[i]);
@@ -2025,6 +2030,7 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 
 void FPCEEmu::SaveGameDbEntry()
 {
+#ifndef NDEBUG
 	if (pCurrentProjectConfig && !pMedia->IsCDROM())
 	{
 		const std::string gameDbPath = GetPCEGlobalConfig()->GameDbFolder;
@@ -2032,6 +2038,7 @@ void FPCEEmu::SaveGameDbEntry()
 		EnsureDirectoryExists(gameDbPath.c_str());
 		::SaveGameDbEntry(pCurrentProjectConfig->Name, fname);
 	}
+#endif
 }
 
 // save config & data
@@ -2053,6 +2060,8 @@ bool FPCEEmu::SaveProject()
 	const std::string graphicsSetsJsonFName = root + "/GraphicsSets.json";
 	const std::string analysisStateFName = root + "/AnalysisState.bin";
 	EnsureDirectoryExists(root.c_str());
+
+	LOGINFO("Saving project for '%s' to '%s'", pCurrentProjectConfig->Name.c_str(), root.c_str());
 
 	// set config values
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -2274,6 +2283,8 @@ void FPCEEmu::SystemMenuAdditions(void)
 		SoftResetMachine();
 	}
 
+#ifndef NDEBUG
+	// This probably needs to go. We can't save emulation state without saving code analysis state.
 	char buf[32];
 	for (int i = 0; i < FProjectConfig::kNumSaveStateSlots; i++)
 	{
@@ -2298,7 +2309,7 @@ void FPCEEmu::SystemMenuAdditions(void)
 			SetSaveStateSlot(i, slotFname.c_str());
 		}
 	}
-
+#endif
 }
 
 void FPCEEmu::OptionsMenuAdditions(void)

@@ -1,14 +1,11 @@
 TODO FOR FIRST RELEASE
 - eliminate all dupe bank bugs (some still exist)
-- OnEnterEditMode() get working
-- edit mode doesnt restore properly. emulation bugs afer restoring
 - tidy up sprites viewer detail pane
 - bank addresses should be offsets (including function labels)? toggle in UI
 - fix trace button in code analysis view (sometimes works)
 - remove validatorpath from global config in release builds
 - remove gamedb from globalconfig (think I did it already)
 - rename snapshotfolder in globalconfig?
-- remove load slot and save slot (make debug only?)
 
 TODO
 - operand dropdowns dont work
@@ -150,3 +147,6 @@ DONE
 - look into "FAddressRef::SetVal on unmapped bank 1 HWPAGE_2. ref will be invalid." type errors. happens on RondoOfBlood in CreateCodeInfoFromJson on "OperandAddress"
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
+- OnEnterEditMode() get working
+- edit mode doesnt restore properly. emulation bugs afer restoring
+- remove load slot and save slot (make debug only?)
