@@ -304,7 +304,13 @@ void SetWindowIcon(const char* pIconFile)
 		glfwSetWindowIcon(g_AppState.MainWindow, 1, images);
 		stbi_image_free(images[0].pixels);
 	}
-	
+
+}
+
+// sam.
+void RequestAppQuit()
+{
+	glfwSetWindowShouldClose(g_AppState.MainWindow, GLFW_TRUE);
 }
 
 void WindowFocusCallback(GLFWwindow* window, int focused)

@@ -1571,7 +1571,10 @@ void FPCEEmu::Shutdown()
 	{
 		// Save Global Config - move to function?
 		pGlobalConfig->LastGame = pCurrentProjectConfig->Name;
-		SaveProject();
+
+		// Set by the "Quit without Saving" File menu item (see RequestQuit()) to skip this.
+		if (!bSkipSaveOnShutdown)
+			SaveProject();
 	}
 	else
 	{
@@ -1584,6 +1587,11 @@ void FPCEEmu::Shutdown()
 	delete pCore;
 
 	FEmuBase::Shutdown();
+}
+
+void FPCEEmu::RequestQuit(void)
+{
+	::RequestAppQuit();
 }
 
 // todo: deal with resetting state when this function fails.
@@ -2050,9 +2058,7 @@ bool FPCEEmu::SaveProject()
 	// If Edit mode is active then disable saving.
 	// Saving when edit mode is active (or has been active) is a potentially destructive action.
 	if (CodeAnalysis.bAllowEditing)
-	{
 		return false;
-	}
 
 	const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name;
 	const std::string configFName = root + "/Config.json";
@@ -2278,10 +2284,14 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 
 void FPCEEmu::SystemMenuAdditions(void)
 {
-	if (pCurrentProjectConfig && ImGui::MenuItem("Soft Reset", "Ctrl+R"))
+	if (!pCurrentProjectConfig)
+		ImGui::BeginDisabled();
+	if (ImGui::MenuItem("Soft Reset", "Ctrl+R"))
 	{
 		SoftResetMachine();
 	}
+	if (!pCurrentProjectConfig)
+		ImGui::EndDisabled();
 
 #ifndef NDEBUG
 	// This probably needs to go. We can't save emulation state without saving code analysis state.

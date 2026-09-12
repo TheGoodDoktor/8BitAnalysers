@@ -317,7 +317,7 @@ void FEmuBase::FileMenu()
 	}
 
 	// sam. On a platform where edit mode discards changes, saving will be disabled until the project is reloaded.
-	const bool bDisableSave = CodeAnalysis.bAllowEditing && EditModeDiscardsChangesOnExit();
+	const bool bDisableSave = (CodeAnalysis.bAllowEditing && EditModeDiscardsChangesOnExit()) || !pCurrentProjectConfig;
 	if (bDisableSave)
 		ImGui::BeginDisabled();
 	if (ImGui::MenuItem("Save Project", "Ctrl+S"))
@@ -328,10 +328,12 @@ void FEmuBase::FileMenu()
 	{
 		ImGui::EndDisabled();
 		// Only display tooltip if item is disabled
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		if (CodeAnalysis.bAllowEditing && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 			ImGui::SetTooltip("Saving is disabled while Edit Mode is active.");
 	}
 
+	if (!pCurrentProjectConfig) // sam
+		ImGui::BeginDisabled();
 	if (pCurrentProjectConfig && ImGui::MenuItem("Export Physical Memory to ASM File"))
 	{
 		std::string exportPath;
@@ -367,7 +369,7 @@ void FEmuBase::FileMenu()
 		bExportBinary = true;
 	}
 
-	if (pCurrentProjectConfig && ImGui::MenuItem("Export Dot File"))
+	if (ImGui::MenuItem("Export Dot File"))
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
 
@@ -375,6 +377,21 @@ void FEmuBase::FileMenu()
 	}
 
 	FileMenuAdditions();
+
+	// sam. Added "Save and Quit" and "Quit without Saving"
+	ImGui::Separator(); 
+
+	if (ImGui::MenuItem("Save and Quit"))
+		RequestQuit();
+	if (!pCurrentProjectConfig)
+		ImGui::EndDisabled();
+
+	if (ImGui::MenuItem("Quit without Saving"))
+	{
+		bSkipSaveOnShutdown = true;
+		RequestQuit();
+	}
+
 }
 
 void FEmuBase::OptionsMenu()
@@ -424,6 +441,9 @@ void FEmuBase::OptionsMenu()
 	// sam. Added popup for edit mode to warn the user the project will be saved.
 	// Use a temp bool for the checkbox rather than binding CodeAnalysis.bAllowEditing.
 	// We set CodeAnalysis.bAllowEditing in ActivateEditMode once the user has confirmed.
+	if (!pCurrentProjectConfig) // sam
+		ImGui::BeginDisabled();
+
 	bool bEditModeUI = CodeAnalysis.bAllowEditing;
 	if (ImGui::MenuItem("Edit Mode", 0, &bEditModeUI))
 	{
@@ -440,6 +460,9 @@ void FEmuBase::OptionsMenu()
 			OnExitEditMode();
 		}
 	}
+	if (!pCurrentProjectConfig) // sam
+		ImGui::EndDisabled();
+
 	ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.pGlobalConfig->bShowOpcodeValues);
 	if (ImGui::BeginMenu("Image Scale"))
 	{

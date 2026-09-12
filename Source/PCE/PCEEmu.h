@@ -55,6 +55,7 @@ public:
 	void	OnEnterEditMode(void) override;
 	void	OnExitEditMode(void) override;
 	bool	EditModeDiscardsChangesOnExit(void) const override { return true; }
+	void	RequestQuit(void) override;
 	bool	LoadEmulatorFile(const FEmulatorFile* pSnapshot) override;
 	bool	NewProjectFromEmulatorFile(const FEmulatorFile& snapshot) override;
 	bool	LoadProject(FProjectConfig* pGameConfig, bool bLoadGame) override;
