@@ -2040,6 +2040,13 @@ bool FPCEEmu::SaveProject()
 	if (pCurrentProjectConfig == nullptr)
 		return false;
 
+	// If Edit mode is active then disable saving.
+	// Saving when edit mode is active (or has been active) is a potentially destructive action.
+	if (CodeAnalysis.bAllowEditing)
+	{
+		return false;
+	}
+
 	const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name;
 	const std::string configFName = root + "/Config.json";
 	const std::string analysisJsonFName = root + "/Analysis.json";
@@ -2383,6 +2390,8 @@ void FPCEEmu::ResetProject()
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
 
+	CodeAnalysis.bAllowEditing = false;
+
 	if (pAsmExportValidator)
 		pAsmExportValidator->Reset(GetPCEGlobalConfig()->bUseAsmExportValidator);
 
@@ -2473,6 +2482,12 @@ void FPCEEmu::SoftResetMachine()
 
 void FPCEEmu::OnEnterEditMode(void)
 {
+	//const std::string windowTitle = kAppTitle + " - " + (pCurrentProjectConfig ? pCurrentProjectConfig->Name : std::string()) + " - EDIT MODE ACTIVE - SAVING DISABLED";
+	//SetWindowTitle(windowTitle.c_str());
+
+	// This was a partial implementation of saving state when edit mode was activated.
+	// The problem with it was it didn't save the code analysis state.
+#if 0
 	bool bOk = pCore->SaveState(nullptr, EditModeBackupStateSize);
 	if (!bOk)
 	{
@@ -2488,10 +2503,41 @@ void FPCEEmu::OnEnterEditMode(void)
 
 	if (!bOk)
 		LOGERROR("Failed to save state on entering edit mode! Expect issues.");
+#endif
 }
+
 
 void FPCEEmu::OnExitEditMode(void)
 {
+	// Load the project to restore the emulation and analysis state back to the point before
+	// edit mode was activated.
+	// Capture the config pointer locally first: LoadProject() calls ResetProject(), which nulls
+	// the pCurrentProjectConfig member partway through (before reassigning it on success), so
+	// referencing pCurrentProjectConfig again after a failed call would be a null dereference.
+	if (FProjectConfig* pGameConfig = pCurrentProjectConfig)
+	{
+		if (!LoadProject(pGameConfig, true))
+		{
+			Reset();
+			DisplayErrorMessage("Could not reload project '%s' after exiting Edit Mode", pGameConfig->Name.c_str());
+		}
+	}
+
+#if 0
+	// This was my failed attempt to restore the emulation state.
+	// It didn't work because we don't restore the analysis state to where it was
+	// before we entered edit mode. This means we can end up with a stale analysis state
+	// that refers to execution that happened when we were in edit mode.
+	// This means the debugger display will be stale (callstack, frame trace, etc) but also
+	// CurrentFrameNo / ExecutionCounter don't get rewound. Also affected 
+	// LastFrameRead/LastRead/LastFrameWrite on each FDataInfo/FCodeInfo. Those numbers will
+	// be ahead of where the player resumed.
+	// More importantly, any function labels that were executed when edit mode was active will
+	// persist forever. This could have serious consequences if you end up executing code that wasn't
+	// meant to be executed. Same issue for data labels.
+	// This logic was replaced by a simpler: 
+	//  Enter edit mode -> SaveProject
+	//  Exit edit mode -> LoadProject
 	assert(pEditModeBackupState);
 	if (pEditModeBackupState != nullptr)
 	{
@@ -2502,6 +2548,7 @@ void FPCEEmu::OnExitEditMode(void)
 			LOGERROR("Failed to restore state after exiting edit mode! Expect issues.");
 		}
 	}
+#endif
 }
 
 void FPCEEmu::DrawEmulatorUI()

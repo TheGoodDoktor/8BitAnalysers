@@ -14,6 +14,7 @@ struct FGlobalConfig
 	bool				bEnableAudio;
 	bool				bShowScanLineIndicator = false;
 	bool				bShowOpcodeValues = false;
+	bool				bSkipEditModeConfirmation = false;	// sam. Don't ask to confirm activating Edit Mode
 	ENumberDisplayMode	NumberDisplayMode = ENumberDisplayMode::HexAitch;
 	int					BranchLinesDisplayMode = 1;
 	std::string			LastGame;

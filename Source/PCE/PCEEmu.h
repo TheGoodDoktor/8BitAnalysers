@@ -54,6 +54,7 @@ public:
 	void	Reset() override;
 	void	OnEnterEditMode(void) override;
 	void	OnExitEditMode(void) override;
+	bool	EditModeDiscardsChangesOnExit(void) const override { return true; }
 	bool	LoadEmulatorFile(const FEmulatorFile* pSnapshot) override;
 	bool	NewProjectFromEmulatorFile(const FEmulatorFile& snapshot) override;
 	bool	LoadProject(FProjectConfig* pGameConfig, bool bLoadGame) override;
@@ -248,6 +249,6 @@ protected:
 
 	FAsmExportValidator* pAsmExportValidator = nullptr;
 
-	uint8_t* pEditModeBackupState = nullptr;
-	size_t EditModeBackupStateSize = 0;
+	//uint8_t* pEditModeBackupState = nullptr;
+	//size_t EditModeBackupStateSize = 0;
 };

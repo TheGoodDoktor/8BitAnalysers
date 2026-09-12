@@ -55,6 +55,8 @@ public:
 
 	virtual void	OnEnterEditMode(void) {}
 	virtual void	OnExitEditMode(void) {}
+	virtual bool	EditModeDiscardsChangesOnExit(void) const { return false; } // sam
+	void			ActivateEditMode(void); // sam
 
 	// sam. This should probably go somewhere else
 	virtual int16_t		GetCanonicalBankId(int16_t bankId) const { return bankId; }
@@ -131,6 +133,7 @@ protected:
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
 	void			DrawErrorMessageModalPopup(void);
+	void			DrawConfirmEditModePopup(void); // sam
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
 	FProjectConfig*		pCurrentProjectConfig = nullptr;
@@ -181,6 +184,7 @@ protected:
 	bool		bExportAsm = false;
 	bool		bExportBinary = false;
 	bool 		bEditGlobalConfig = false;
+	bool		bConfirmEditModePopup = false; // sam
 
 	FEmulatorFile EmulatorFileToLoad;	// for 'are you sure?' popup
 
