@@ -75,6 +75,7 @@ public:
 	virtual void	DrawEmulatorUI() = 0;
 
 	void			AddViewer(FViewerBase* pViewr);
+	const std::vector<FViewerBase*>&	GetViewers() const { return Viewers; }
 
 	void			SetXHighlight(int x) { HighlightXPos = x; }
 	void			SetYHighlight(int y) { HighlightYPos = y; }

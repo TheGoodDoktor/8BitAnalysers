@@ -22,6 +22,7 @@
 #include <CodeAnalyser/UI/UIColours.h>
 #include "CodeAnalyser/CodeAnalysisDot.h"
 #include <ImGuiSupport/ImGuiScaling.h>
+#include <ImGuiSupport/ImGuiSettingsHandler.h>
 
 #define NOMINMAX
 #include "MCPServer/MCPManager.h"
@@ -86,7 +87,9 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 	static std::string iniFile = GetAppSupportPath(pImGuiConfigFile);
 	ImGuiIO& io = ImGui::GetIO();
 	io.IniFilename = iniFile.c_str();
-	
+
+	RegisterImguiSettingsHandler(this);
+
 	RegisterBasicDisplayTypes();
 	//AddViewer(new FDataTypesViewer(this)); // sam. Disabled data types viewer. Structs= & Flags are not fully working
 
