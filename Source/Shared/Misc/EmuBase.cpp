@@ -10,6 +10,7 @@
 #include <CodeAnalyser/UI/CharacterMapViewer.h>
 #include <CodeAnalyser/UI/DisplayTypes.h>
 #include <CodeAnalyser/UI/GlobalsViewer.h>
+#include <CodeAnalyser/UI/DebuggerViewers.h>
 #include <CodeAnalyser/StaticAnalysis.h>
 #include <CodeAnalyser/DataTypes.h>
 #include <CodeAnalyser/MemoryAnalyser.h>
@@ -102,6 +103,19 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	pStaticAnalysis = new FStaticAnalyser(this);
 	AddViewer(pStaticAnalysis);
+
+// sam. Added viewers for all debugger windows
+#if TABBED_DEBUGGER
+	AddViewer(new FDebuggerTabsViewer(this));
+#else
+	AddViewer(new FBreakpointsViewer(this));
+	AddViewer(new FWatchesViewer(this));
+	AddViewer(new FRegistersViewer(this));
+	AddViewer(new FStackViewer(this));
+	AddViewer(new FCallStackViewer(this));
+	AddViewer(new FTraceViewer(this));
+	AddViewer(new FEventsViewer(this));
+#endif
 
 	if (launchConfig.bRunMCPServer)
 		InitMCPServer(this);
@@ -199,20 +213,12 @@ bool FEmuBase::DrawDockingView()
 
 void FEmuBase::DrawUI()
 {
-	// TODO: Make these viewers
-	//if (ImGui::Begin("Debugger"))
-	{
-		CodeAnalysis.Debugger.DrawUI();
-	}
-	//ImGui::End();
-
-
 	/*if (ImGui::Begin("IO Analyser"))
 	{
 		CodeAnalysis.IOAnalyser.DrawUI();
 	}
 	ImGui::End();*/
-		
+
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
 	{

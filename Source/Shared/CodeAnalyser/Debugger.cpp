@@ -1303,6 +1303,12 @@ void DrawRegisters(FCodeAnalysisState& state)
 	}
 }
 
+// sam
+void FDebugger::DrawRegisters(void)
+{
+	::DrawRegisters(*pCodeAnalysis);
+}
+
 void FDebugger::DrawWatches(void)
 {
     FCodeAnalysisState& state = *pCodeAnalysis;
@@ -1602,108 +1608,6 @@ void FDebugger::DrawEvents(void)
 		ImGui::EndTable();
 
 	}
-}
-
-#define DOCKABLE_DEBUGGER 1
-
-void FDebugger::DrawUI(void)
-{
-	/*if (ImGui::Button("Step IO Read"))
-		StepIORead();
-	ImGui::SameLine();
-	if (ImGui::Button("Step IO Write"))
-		StepIOWrite();
-		*/
-#if DOCKABLE_DEBUGGER
-	if (ImGui::Begin("Breakpoints"))
-	{
-		DrawBreakpoints();
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Watches"))
-	{
-		DrawWatches();
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Registers"))
-	{
-		DrawRegisters(*pCodeAnalysis);
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Stack"))
-	{
-		DrawStack();
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Call Stack"))
-	{
-		DrawCallStack();
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Trace"))
-	{
-		DrawTrace();
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("Events"))
-	{
-		DrawEvents();
-	}
-	ImGui::End();
-#else
-    if (ImGui::BeginTabBar("DebuggerTabBar"))
-    {
-        if (ImGui::BeginTabItem("Breakpoints"))
-        {
-			DrawBreakpoints();
-			ImGui::EndTabItem();
-		}
-		
-        if (ImGui::BeginTabItem("Watches"))
-		{
-			DrawWatches();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Registers"))
-		{
-            DrawRegisters(*pCodeAnalysis);
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Stack"))
-		{
-			DrawStack();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Call Stack"))
-		{
-			DrawCallStack();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Trace"))
-		{
-			DrawTrace();
-			ImGui::EndTabItem();
-		}
-
-		if (ImGui::BeginTabItem("Events"))
-		{
-			DrawEvents();
-			ImGui::EndTabItem();
-		}
-
-		ImGui::EndTabBar();
-	}
-#endif
 }
 
 void FDebugger::FixupAddresRefs(void)
