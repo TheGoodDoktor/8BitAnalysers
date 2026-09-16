@@ -160,13 +160,31 @@ void DrawFlag(FCodeAnalysisState& state, bool* curFlag, bool oldFlag)
 	ImGui::PushID(curFlag);
 	if (state.bAllowEditing)
 	{
+		// sam. Center checkbox
+		const float checkboxWidth = ImGui::GetFrameHeight();
+		const float availWidth = ImGui::GetContentRegionAvail().x;
+		if (availWidth > checkboxWidth)
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (availWidth - checkboxWidth) * 0.5f);
 		ImGui::PushStyleColor(ImGuiCol_CheckMark, col);
 		ImGui::Checkbox("##flag", curFlag);
 		ImGui::PopStyleColor();
 	}
 	else
 	{
-		ImGui::TextColored(col, "%s", *curFlag ? "Y" : "N");
+		// sam. Draw a filled square if the flag is set
+		const float halfSize = ImGui::GetFontSize() * 0.35f;
+		const float availWidth = ImGui::GetContentRegionAvail().x;
+		const ImVec2 pos = ImGui::GetCursorScreenPos();
+		const ImVec2 center(pos.x + availWidth * 0.5f, pos.y + ImGui::GetTextLineHeight() * 0.5f);
+		const ImVec2 topLeft(center.x - halfSize, center.y - halfSize);
+		const ImVec2 bottomRight(center.x + halfSize, center.y + halfSize);
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		const ImU32 colU32 = ImGui::ColorConvertFloat4ToU32(col);
+		if (*curFlag)
+			drawList->AddRectFilled(topLeft, bottomRight, colU32);
+		else
+			drawList->AddRect(topLeft, bottomRight, colU32, 0.0f, 0, 1.5f);
+		ImGui::Dummy(ImVec2(availWidth, ImGui::GetTextLineHeight()));
 	}
 	ImGui::PopID();
 }
