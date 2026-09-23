@@ -180,10 +180,19 @@ void DrawFlag(FCodeAnalysisState& state, bool* curFlag, bool oldFlag)
 		const ImVec2 bottomRight(center.x + halfSize, center.y + halfSize);
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
 		const ImU32 colU32 = ImGui::ColorConvertFloat4ToU32(col);
+#define CIRCULAR_FLAGS 1
+#if CIRCULAR_FLAGS
+		if (*curFlag)
+			drawList->AddCircleFilled(center, halfSize, colU32);
+		else
+			drawList->AddCircle(center, halfSize, colU32, 0, 1.5f);
+#else
+		// square flags
 		if (*curFlag)
 			drawList->AddRectFilled(topLeft, bottomRight, colU32);
 		else
 			drawList->AddRect(topLeft, bottomRight, colU32, 0.0f, 0, 1.5f);
+#endif
 		ImGui::Dummy(ImVec2(availWidth, ImGui::GetTextLineHeight()));
 	}
 	ImGui::PopID();

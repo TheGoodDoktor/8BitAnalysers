@@ -158,8 +158,17 @@ void DrawRegisters_6502(FCodeAnalysisState& state)
 			p6502CPU->SetY(curRegs.Y);
 
 		// Flags
-		//uint8_t p = p6502CPU->GetP();
-		//if (curRegs.CarryFlag != oldRegs.CarryFlag)
-		//	p6502CPU->SetP((p6502CPU->GetP() & ~ICPUEmulator6502::kFlagCarry) | (curRegs.CarryFlag ? ICPUEmulator6502::kFlagCarry : 0));
+		// sam. Allow changing flag values when in edit mode
+		const uint8_t trackedFlagsMask = ICPUEmulator6502::kFlagCarry | ICPUEmulator6502::kFlagZero | ICPUEmulator6502::kFlagInterrupt |
+			ICPUEmulator6502::kFlagDecimal | ICPUEmulator6502::kFlagBreak | ICPUEmulator6502::kFlagOverflow | ICPUEmulator6502::kFlagNegative;
+		const uint8_t newFlags = (curRegs.CarryFlag ? ICPUEmulator6502::kFlagCarry : 0) |
+			(curRegs.ZeroFlag ? ICPUEmulator6502::kFlagZero : 0) |
+			(curRegs.InterruptDisableFlag ? ICPUEmulator6502::kFlagInterrupt : 0) |
+			(curRegs.DecimalModeFlag ? ICPUEmulator6502::kFlagDecimal : 0) |
+			(curRegs.BreakFlag ? ICPUEmulator6502::kFlagBreak : 0) |
+			(curRegs.OverflowFlag ? ICPUEmulator6502::kFlagOverflow : 0) |
+			(curRegs.NegativeFlag ? ICPUEmulator6502::kFlagNegative : 0);
+		if (newFlags != (p6502CPU->GetP() & trackedFlagsMask))
+			p6502CPU->SetP((p6502CPU->GetP() & ~trackedFlagsMask) | newFlags);
 	}
 }
