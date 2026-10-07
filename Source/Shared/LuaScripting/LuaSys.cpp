@@ -289,7 +289,10 @@ void DrawOSBHandlersComboBox(std::string& HandlerName)
 
 	lua_getglobal(pState, kOSBHandlersTable);
 	if (lua_istable(pState, -1) == false)
+	{
+		lua_pop(pState, 1);	// balance stack
 		return;
+	}
 
 	if(ImGui::BeginCombo("OSB Handlers", HandlerName.c_str()))
 	{
