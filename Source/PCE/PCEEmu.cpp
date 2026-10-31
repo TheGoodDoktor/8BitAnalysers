@@ -2441,6 +2441,7 @@ void FPCEEmu::Tick()
 			//CodeAnalysis.OnMachineFrameStart();
 		}
 	}
+#endif
 
 	UpdatePalettes();
 
