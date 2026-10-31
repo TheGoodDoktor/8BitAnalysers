@@ -188,11 +188,17 @@ static int SetEditMode(lua_State* pState)
 		const bool bEnterEditMode = lua_toboolean(pState,1);
 		if (bEnterEditMode != state.bAllowEditing)
 		{
-			state.bAllowEditing = bEnterEditMode;
-			if(bEnterEditMode)
-				pEmu->OnEnterEditMode();
+			if (bEnterEditMode)
+			{
+				// sam. No UI to confirm with from a script - just save (if needed) and continue.
+				// Same as ticking "Don't ask me again" would.
+				pEmu->ActivateEditMode();
+			}
 			else
+			{
+				state.bAllowEditing = false; // sam
 				pEmu->OnExitEditMode();
+			}
 		}
 	}
 	return 0;

@@ -1453,7 +1453,8 @@ void DoItemContextMenu(FCodeAnalysisState& state, const FCodeAnalysisItem &item)
 			state.GetEmulator()->GraphicsViewerSetView(item.AddressRef);
 		}
 
-		if (ImGui::Selectable("View in character map viewer"))
+		// sam. Disable character map functionality (for now).
+		if (state.Config.bSupportedDataTypes[(int)EDataType::CharacterMap] && ImGui::Selectable("View in character map viewer"))
 		{
 			state.GetEmulator()->CharacterMapViewerSetView(item.AddressRef);
 		}
@@ -1697,7 +1698,7 @@ void DrawNavigationButtons(FCodeAnalysisState& state, FCodeAnalysisViewState& vi
 {
 	const float glyphWidth = ImGui_GetFontCharWidth();
 
-	if (ImGui::ArrowButton("##btnprev", ImGuiDir_Left))
+	if (ImGui::ArrowButton("##btnprev", ImGuiDir_Left) || ImGui::IsMouseClicked(3))
 		viewState.GoToPreviousAddress();
 	ImGui::SameLine();
 	if (ImGui::ArrowButton("##btnnext", ImGuiDir_Right))
@@ -2332,7 +2333,8 @@ void DrawFormatTab(FCodeAnalysisState& state, FCodeAnalysisViewState& viewState)
 	ImGui::PopID();
 
 	//static EDataType dataType = EDataType::Byte;
-	DrawDataTypeCombo("Data Type", formattingOptions.DataType);   // TODSO: maybe pass in a list of supported types?
+	// sam. Disable character map functionality (for now).
+	DrawDataTypeCombo("Data Type", formattingOptions.DataType, state.Config.bSupportedDataTypes);
 
 	switch (formattingOptions.DataType)
 	{

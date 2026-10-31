@@ -10,6 +10,7 @@
 #include <CodeAnalyser/UI/CharacterMapViewer.h>
 #include <CodeAnalyser/UI/DisplayTypes.h>
 #include <CodeAnalyser/UI/GlobalsViewer.h>
+#include <CodeAnalyser/UI/DebuggerViewers.h>
 #include <CodeAnalyser/StaticAnalysis.h>
 #include <CodeAnalyser/DataTypes.h>
 #include <CodeAnalyser/MemoryAnalyser.h>
@@ -22,6 +23,7 @@
 #include <CodeAnalyser/UI/UIColours.h>
 #include "CodeAnalyser/CodeAnalysisDot.h"
 #include <ImGuiSupport/ImGuiScaling.h>
+#include <ImGuiSupport/ImGuiSettingsHandler.h>
 
 #define NOMINMAX
 #include "MCPServer/MCPManager.h"
@@ -86,9 +88,11 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 	static std::string iniFile = GetAppSupportPath(pImGuiConfigFile);
 	ImGuiIO& io = ImGui::GetIO();
 	io.IniFilename = iniFile.c_str();
-	
+
+	RegisterImguiSettingsHandler(this);
+
 	RegisterBasicDisplayTypes();
-    AddViewer(new FDataTypesViewer(this));
+	//AddViewer(new FDataTypesViewer(this)); // sam. Disabled data types viewer. Structs= & Flags are not fully working
 
 	pGlobalsViewer = new FGlobalsViewer(this);
 	AddViewer(pGlobalsViewer);
@@ -99,6 +103,19 @@ bool	FEmuBase::Init(const FEmulatorLaunchConfig& launchConfig)
 
 	pStaticAnalysis = new FStaticAnalyser(this);
 	AddViewer(pStaticAnalysis);
+
+// sam. Added viewers for all debugger windows
+#if TABBED_DEBUGGER
+	AddViewer(new FDebuggerTabsViewer(this));
+#else
+	AddViewer(new FBreakpointsViewer(this));
+	AddViewer(new FWatchesViewer(this));
+	AddViewer(new FRegistersViewer(this));
+	AddViewer(new FStackViewer(this));
+	AddViewer(new FCallStackViewer(this));
+	AddViewer(new FTraceViewer(this));
+	AddViewer(new FEventsViewer(this));
+#endif
 
 	if (launchConfig.bRunMCPServer)
 		InitMCPServer(this);
@@ -196,20 +213,12 @@ bool FEmuBase::DrawDockingView()
 
 void FEmuBase::DrawUI()
 {
-	// TODO: Make these viewers
-	//if (ImGui::Begin("Debugger"))
-	{
-		CodeAnalysis.Debugger.DrawUI();
-	}
-	//ImGui::End();
-
-
 	/*if (ImGui::Begin("IO Analyser"))
 	{
 		CodeAnalysis.IOAnalyser.DrawUI();
 	}
 	ImGui::End();*/
-		
+
 	// Draw registered viewers
 	for (auto Viewer : Viewers)
 	{
@@ -316,11 +325,24 @@ void FEmuBase::FileMenu()
 		ImGui::EndMenu();
 	}
 
+	// sam. On a platform where edit mode discards changes, saving will be disabled until the project is reloaded.
+	const bool bDisableSave = (CodeAnalysis.bAllowEditing && EditModeDiscardsChangesOnExit()) || !pCurrentProjectConfig;
+	if (bDisableSave)
+		ImGui::BeginDisabled();
 	if (ImGui::MenuItem("Save Project", "Ctrl+S"))
 	{
 		SaveProject();
 	}
+	if (bDisableSave) // sam. Add tooltip to explain why saving is disabled.
+	{
+		ImGui::EndDisabled();
+		// Only display tooltip if item is disabled
+		if (CodeAnalysis.bAllowEditing && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+			ImGui::SetTooltip("Saving is disabled while Edit Mode is active.");
+	}
 
+	if (!pCurrentProjectConfig) // sam
+		ImGui::BeginDisabled();
 	if (pCurrentProjectConfig && ImGui::MenuItem("Export Physical Memory to ASM File"))
 	{
 		std::string exportPath;
@@ -356,7 +378,7 @@ void FEmuBase::FileMenu()
 		bExportBinary = true;
 	}
 
-	if (pCurrentProjectConfig && ImGui::MenuItem("Export Dot File"))
+	if (ImGui::MenuItem("Export Dot File"))
 	{
 		const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name + "/";
 
@@ -364,6 +386,21 @@ void FEmuBase::FileMenu()
 	}
 
 	FileMenuAdditions();
+
+	// sam. Added "Save and Quit" and "Quit without Saving"
+	ImGui::Separator(); 
+
+	if (ImGui::MenuItem("Save and Quit"))
+		RequestQuit();
+	if (!pCurrentProjectConfig)
+		ImGui::EndDisabled();
+
+	if (ImGui::MenuItem("Quit without Saving"))
+	{
+		bSkipSaveOnShutdown = true;
+		RequestQuit();
+	}
+
 }
 
 void FEmuBase::OptionsMenu()
@@ -409,15 +446,32 @@ void FEmuBase::OptionsMenu()
 	}
 	ImGui::MenuItem("Scan Line Indicator", 0, &CodeAnalysis.pGlobalConfig->bShowScanLineIndicator);
 	ImGui::MenuItem("Enable Audio", 0, &CodeAnalysis.pGlobalConfig->bEnableAudio);
-	// sam. Disabled on PCE for now
-	/*if (ImGui::MenuItem("Edit Mode", 0, &CodeAnalysis.bAllowEditing))
+	
+	// sam. Added popup for edit mode to warn the user the project will be saved.
+	// Use a temp bool for the checkbox rather than binding CodeAnalysis.bAllowEditing.
+	// We set CodeAnalysis.bAllowEditing in ActivateEditMode once the user has confirmed.
+	if (!pCurrentProjectConfig) // sam
+		ImGui::BeginDisabled();
+
+	bool bEditModeUI = CodeAnalysis.bAllowEditing;
+	if (ImGui::MenuItem("Edit Mode", 0, &bEditModeUI))
 	{
-		if(CodeAnalysis.bAllowEditing)
-			OnEnterEditMode();
+		if (bEditModeUI)
+		{
+			if (EditModeDiscardsChangesOnExit() && !pGlobalConfig->bSkipEditModeConfirmation)
+				bConfirmEditModePopup = true;	// ask first - see DrawConfirmEditModePopup()
+			else
+				ActivateEditMode();
+		}
 		else
+		{
+			CodeAnalysis.bAllowEditing = false;
 			OnExitEditMode();
-			
-	}*/
+		}
+	}
+	if (!pCurrentProjectConfig) // sam
+		ImGui::EndDisabled();
+
 	ImGui::MenuItem("Show Opcode Values", 0, &CodeAnalysis.pGlobalConfig->bShowOpcodeValues);
 	if (ImGui::BeginMenu("Image Scale"))
 	{
@@ -647,6 +701,10 @@ void FEmuBase::DrawMainMenu()
 			ImGui::EndMenu();
 		}
 
+		// sam. Display edit mode status in title bar
+		if (CodeAnalysis.bAllowEditing)
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[Edit Mode Active - Saving Disabled]");
+
 		// draw emu timings
 		const double timeMS = 1000.0f / ImGui::GetIO().Framerate;
 		ImGui::SameLine(ImGui::GetWindowWidth() - 120);
@@ -658,27 +716,32 @@ void FEmuBase::DrawMainMenu()
 		ImGui::EndMainMenuBar();
 	}
 
-	// Global keyboard shortcuts
-	GlobalShortcuts();
-
-	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S))
-		SaveProject();
-
-	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O))
-		bOpenProjectPopup = true;
-
-	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_N) && !GamesLists.empty())
+	// sam. Disable keyboard shortcuts if a popup is open.
+	if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopup) == false)
 	{
-		bNewProjectPopup = true;
-		NewProjectListName = GamesLists.begin()->first;
-	}
+		GlobalShortcuts();
 
-	if (FGlobalConfig* pConfig = CodeAnalysis.pGlobalConfig)
-	{
-		if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_RightBracket))
-			pConfig->FontSizePts = std::min(pConfig->FontSizePts + 1, 72);
-		if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_LeftBracket))
-			pConfig->FontSizePts = std::max(pConfig->FontSizePts - 1, 8);
+		// sam. Disable saving if edit mode is active (if the platforms discards edit mode changes)
+		const bool bCanSave = CodeAnalysis.bAllowEditing == false || EditModeDiscardsChangesOnExit() == false;
+		if (bCanSave && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S))
+			SaveProject();
+
+		if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O))
+			bOpenProjectPopup = true;
+
+		if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_N) && !GamesLists.empty())
+		{
+			bNewProjectPopup = true;
+			NewProjectListName = GamesLists.begin()->first;
+		}
+
+		if (FGlobalConfig* pConfig = CodeAnalysis.pGlobalConfig)
+		{
+			if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_RightBracket))
+				pConfig->FontSizePts = std::min(pConfig->FontSizePts + 1, 72);
+			if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_LeftBracket))
+				pConfig->FontSizePts = std::max(pConfig->FontSizePts - 1, 8);
+		}
 	}
 
 	// Draw any modal popups that have been requested from clicking on menu items.
@@ -689,6 +752,7 @@ void FEmuBase::DrawMainMenu()
 	DrawExportAsmModalPopup();
 	DrawReplaceGameModalPopup();
 	DrawErrorMessageModalPopup();
+	DrawConfirmEditModePopup(); // sam
 	DrawEditGlobalConfigModalPopup();
 }
 
@@ -1066,6 +1130,52 @@ void FEmuBase::DrawNewProjectPopup()
 		if (ImGui::IsKeyPressed(ImGuiKey_Escape))
 			ImGui::CloseCurrentPopup();
 
+		ImGui::EndPopup();
+	}
+}
+
+// sam. 
+void FEmuBase::ActivateEditMode(void)
+{
+	if (EditModeDiscardsChangesOnExit())
+		SaveProject();	// flush unsaved work first - saving is disabled once edit mode is active
+
+	CodeAnalysis.bAllowEditing = true;
+	OnEnterEditMode();
+}
+
+// sam. Added popup to ask the user if they are sure they want to activate edit mode
+void FEmuBase::DrawConfirmEditModePopup()
+{
+	if (bConfirmEditModePopup)
+		ImGui::OpenPopup("Activate Edit Mode?");
+
+	if (ImGui::BeginPopupModal("Activate Edit Mode?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text(
+			"The project will be saved before Edit Mode is activated.\n"
+			"While it's active, saving is disabled, and any changes made will\n"
+			"be discarded when Edit Mode is turned off.\n\n");
+		ImGui::Separator();
+
+		ImGui::Checkbox("Don't ask me again", &pGlobalConfig->bSkipEditModeConfirmation);
+
+
+		const float saveButtonWidth = ImGui_GetFontCharWidth() * 20;
+		if (ImGui::Button("Save and Continue", ImVec2(saveButtonWidth, 0)))
+		{
+			ActivateEditMode();
+			bConfirmEditModePopup = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		const float cancelButtonWidth = ImGui_GetFontCharWidth() * 12;
+		if (ImGui::Button("Cancel", ImVec2(cancelButtonWidth, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape))
+		{
+			bConfirmEditModePopup = false;
+			ImGui::CloseCurrentPopup();
+		}
 		ImGui::EndPopup();
 	}
 }

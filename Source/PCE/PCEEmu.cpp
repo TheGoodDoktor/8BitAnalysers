@@ -3,6 +3,8 @@
 #include "PCEEmu.h"
 
 #include <chrono>
+#include <algorithm>
+#include <cmath>
 
 #include "AsmExportValidator.h"
 #include "Constants.h"
@@ -49,6 +51,7 @@
 #include "PCEGameConfig.h"
 
 #include "optick/optick.h"
+#include <sokol_audio.h>
 
 bool InitPCEAsmExporters();
 
@@ -1255,6 +1258,9 @@ bool FPCEEmu::Init(const FEmulatorLaunchConfig& config)
 	SetHexNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	SetNumberDisplayMode(pGlobalConfig->NumberDisplayMode);
 	CodeAnalysis.Config.RomType = ESystemRom::None;
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::CharacterMap] = false;	// Character map feature isn't working on PCE yet - hide it from the user.
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::ColAttr] = false;	// ColAttr is ZX Spectrum specific (I think)
+	CodeAnalysis.Config.bSupportedDataTypes[(int)EDataType::Struct] = false;	// Structs don't work properly yet.
 
 #if CDROM_SUPPORT
 	// todo: check this is system card 3.0.
@@ -1607,7 +1613,10 @@ void FPCEEmu::Shutdown()
 	{
 		// Save Global Config - move to function?
 		pGlobalConfig->LastGame = pCurrentProjectConfig->Name;
-		SaveProject();
+
+		// Set by the "Quit without Saving" File menu item (see RequestQuit()) to skip this.
+		if (!bSkipSaveOnShutdown)
+			SaveProject();
 	}
 	else
 	{
@@ -1622,6 +1631,11 @@ void FPCEEmu::Shutdown()
 	FEmuBase::Shutdown();
 }
 
+void FPCEEmu::RequestQuit(void)
+{
+	::RequestAppQuit();
+}
+
 // todo: deal with resetting state when this function fails.
 // if ImportAnalysisState() fails when booting up, the game save state will still load instead
 // of the memory being reset. 
@@ -1631,7 +1645,6 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 	LOGINFO("Load Project '%s'. bLoadGameData = %s", pGameConfig->Name.c_str(), bLoadGameData ? "True" : "False");
 
 	// Save the last game's bank mapping progress
-	// todo: remove in release build
 	// todo: we may not want to save asm validation results here unless automation mode is active.
 	// otherwise if we may overwrite a complete validation run when we load a new game.
 	SaveGameDbEntry();
@@ -2012,10 +2025,16 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 {
 	if (jsonDoc.contains("MprBankIds"))
 	{
+		LOGINFO("Mapping initial bank state");
+
 		const auto& mprBankIds = jsonDoc["MprBankIds"];
 		for (int i = 0; i < kNumMprSlots && i < (int)mprBankIds.size(); i++)
 		{
-			if (!MapBankIdToMprSlot(i, (int16_t)mprBankIds[i]))
+			const int16_t bankId = mprBankIds[i];
+			FCodeAnalysisBank* pBank = CodeAnalysis.GetBank(bankId);
+			LOGINFO("Mapping bank %03d '%s' to MPR slot %d", bankId, pBank ? pBank->Name.c_str() : "None", i);
+
+			if (!MapBankIdToMprSlot(i, bankId))
 			{
 				// The bank ids saved in the analysis json don't match the machine state we just restored. 
 				SetLastError("Failed to restore mpr bank mapping for slot %d, bank id %d. Project data may be out of sync with the machine state.", i, (int16_t)mprBankIds[i]);
@@ -2060,6 +2079,7 @@ bool FPCEEmu::ImportPlatformAnalysisJson(const nlohmann::json& jsonDoc)
 
 void FPCEEmu::SaveGameDbEntry()
 {
+#ifndef NDEBUG
 	if (pCurrentProjectConfig && !pMedia->IsCDROM())
 	{
 		const std::string gameDbPath = GetPCEGlobalConfig()->GameDbFolder;
@@ -2067,6 +2087,7 @@ void FPCEEmu::SaveGameDbEntry()
 		EnsureDirectoryExists(gameDbPath.c_str());
 		::SaveGameDbEntry(pCurrentProjectConfig->Name, fname);
 	}
+#endif
 }
 
 // save config & data
@@ -2075,12 +2096,19 @@ bool FPCEEmu::SaveProject()
 	if (pCurrentProjectConfig == nullptr)
 		return false;
 
+	// If Edit mode is active then disable saving.
+	// Saving when edit mode is active (or has been active) is a potentially destructive action.
+	if (CodeAnalysis.bAllowEditing)
+		return false;
+
 	const std::string root = pGlobalConfig->WorkspaceRoot + pCurrentProjectConfig->Name;
 	const std::string configFName = root + "/Config.json";
 	const std::string analysisJsonFName = root + "/Analysis.json";
 	const std::string graphicsSetsJsonFName = root + "/GraphicsSets.json";
 	const std::string analysisStateFName = root + "/AnalysisState.bin";
 	EnsureDirectoryExists(root.c_str());
+
+	LOGINFO("Saving project for '%s' to '%s'", pCurrentProjectConfig->Name.c_str(), root.c_str());
 
 	// set config values
 	for (int i = 0; i < FCodeAnalysisState::kNoViewStates; i++)
@@ -2198,6 +2226,21 @@ void FPCEEmu::GlobalShortcuts(void)
 		ExportAsmForCurrentGame();
 	if (pCurrentProjectConfig && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_R))
 		SoftResetMachine();
+	
+	// Toggle number base with Ctrl & B
+	if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_B))
+	{
+		ENumberDisplayMode numDisplayMode = GetNumberDisplayMode();
+		if (numDisplayMode == ENumberDisplayMode::Decimal)
+			numDisplayMode = ENumberDisplayMode::HexAitch;
+		else if (numDisplayMode == ENumberDisplayMode::HexAitch)
+			numDisplayMode = ENumberDisplayMode::HexDollar;
+		else if (numDisplayMode == ENumberDisplayMode::HexDollar)
+			numDisplayMode = ENumberDisplayMode::Decimal;
+		else
+			assert(0); // unsupported num display mode
+		SetNumberDisplayMode(numDisplayMode);
+	}
 }
 
 // todo: get this working on CD games
@@ -2282,11 +2325,17 @@ bool FPCEEmu::ExportAsmForCurrentGame()
 
 void FPCEEmu::SystemMenuAdditions(void)
 {
-	if (pCurrentProjectConfig && ImGui::MenuItem("Soft Reset", "Ctrl+R"))
+	if (!pCurrentProjectConfig)
+		ImGui::BeginDisabled();
+	if (ImGui::MenuItem("Soft Reset", "Ctrl+R"))
 	{
 		SoftResetMachine();
 	}
+	if (!pCurrentProjectConfig)
+		ImGui::EndDisabled();
 
+#ifndef NDEBUG
+	// This probably needs to go. We can't save emulation state without saving code analysis state.
 	char buf[32];
 	for (int i = 0; i < FProjectConfig::kNumSaveStateSlots; i++)
 	{
@@ -2311,7 +2360,7 @@ void FPCEEmu::SystemMenuAdditions(void)
 			SetSaveStateSlot(i, slotFname.c_str());
 		}
 	}
-
+#endif
 }
 
 void FPCEEmu::OptionsMenuAdditions(void)
@@ -2359,6 +2408,52 @@ void FPCEEmu::Tick()
 
 	UpdateDebugStats();
 
+#if REALTIME_FRAME_PACING
+	// Run whole PCE frames to keep pace with real time, independent of the host refresh rate.
+	static constexpr double kPCEFrameTime = (double)(HUC6260_LINE_LENGTH * HUC6260_LINES) / (double)GG_MASTER_CLOCK_RATE;
+
+	FDebugger& debugger = CodeAnalysis.Debugger;
+	if (debugger.IsStopped() == false)
+	{
+		FrameTimeAccumulator += (double)ImGui::GetIO().DeltaTime * EmuSpeedScale;
+
+		// Don't try to catch up if the host can't keep pace - running extra frames makes the next tick longer still,
+		// so a slow host runs at one frame per tick.
+		const int maxFrames = std::max(1, (int)std::ceil(EmuSpeedScale));
+		const int framesToRun = std::min((int)(FrameTimeAccumulator / kPCEFrameTime), maxFrames);
+		FrameTimeAccumulator -= framesToRun * kPCEFrameTime;
+
+		// Carry over at most one frame of owed time to smooth out host frame time jitter, drop the rest.
+		FrameTimeAccumulator = std::min(FrameTimeAccumulator, kPCEFrameTime);
+
+		for (int i = 0; i < framesToRun && debugger.IsStopped() == false; i++)
+		{
+			if (pDebugStats)
+				pDebugStats->NumBankSwitchesThisFrame = 0;
+
+			CodeAnalysis.OnFrameStart();
+			StoreRegisters_6502(CodeAnalysis);
+			//CodeAnalysis.OnMachineFrameStart();
+
+			int audioSampleCount = 0;
+			pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
+
+			// Only output audio at normal speed - fast forward would just overflow the audio buffer
+			if (pGlobalConfig->bEnableAudio && EmuSpeedScale <= 1.0f)
+				PushAudio(pAudioBuf, audioSampleCount);
+
+			if (pAsmExportValidator && GetPCEGlobalConfig()->bUseAsmExportValidator)
+				pAsmExportValidator->Tick();
+
+			CodeAnalysis.OnFrameEnd();
+			//CodeAnalysis.OnMachineFrameStart();
+		}
+	}
+	else
+	{
+		FrameTimeAccumulator = 0.0;	// don't owe time for while we were paused
+	}
+#else
 	for (int i = 0; i < EmuFramesToRun; i++)
 	{
 		FDebugger& debugger = CodeAnalysis.Debugger;
@@ -2374,6 +2469,9 @@ void FPCEEmu::Tick()
 			int audioSampleCount = 0;
 			pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
 
+			if (pGlobalConfig->bEnableAudio)
+				PushAudio(pAudioBuf, audioSampleCount);
+
 			if (pAsmExportValidator && GetPCEGlobalConfig()->bUseAsmExportValidator)
 				pAsmExportValidator->Tick();
 
@@ -2381,6 +2479,7 @@ void FPCEEmu::Tick()
 			//CodeAnalysis.OnMachineFrameStart();
 		}
 	}
+#endif
 
 	UpdatePalettes();
 
@@ -2388,6 +2487,39 @@ void FPCEEmu::Tick()
 
 	// Draw UI
 	DrawDockingView();
+}
+
+// Geargrafx produces a frame's worth of interleaved stereo samples at GG_AUDIO_SAMPLE_RATE.
+// Sokol audio is set up as mono at the device's sample rate, so downmix and resample with linear interpolation.
+// If the emulator runs ahead of the audio device sokol drops the excess samples.
+void FPCEEmu::PushAudio(const int16_t* pSamples, int sampleCount)
+{
+	const int numFrames = sampleCount / 2;
+	if (numFrames <= 0)
+		return;
+
+	auto getMono = [pSamples](int frame) { return ((float)pSamples[frame * 2] + (float)pSamples[frame * 2 + 1]) * (0.5f / 32768.0f); };
+
+	const float step = (float)GG_AUDIO_SAMPLE_RATE / (float)saudio_sample_rate();
+	int outCount = 0;
+
+	// Position 0 is the last sample of the previous frame, position N is sample N-1 of this frame
+	while (AudioResamplePos < (float)numFrames && outCount < kMaxAudioOutFrames)
+	{
+		const int i = (int)AudioResamplePos;
+		const float t = AudioResamplePos - (float)i;
+		const float s0 = i == 0 ? AudioLastSample : getMono(i - 1);
+		const float s1 = getMono(i);
+		AudioOutBuf[outCount++] = s0 + (s1 - s0) * t;
+		AudioResamplePos += step;
+	}
+
+	AudioResamplePos -= (float)numFrames;
+	if (AudioResamplePos < 0.0f)
+		AudioResamplePos = 0.0f;
+	AudioLastSample = getMono(numFrames - 1);
+
+	saudio_push(AudioOutBuf, outCount);
 }
 
 void FPCEEmu::ResetProject()
@@ -2402,6 +2534,8 @@ void FPCEEmu::ResetProject()
 
 	// Initialise code analysis
 	CodeAnalysis.Init(this);
+
+	CodeAnalysis.bAllowEditing = false;
 
 	if (pAsmExportValidator)
 		pAsmExportValidator->Reset(GetPCEGlobalConfig()->bUseAsmExportValidator);
@@ -2493,35 +2627,74 @@ void FPCEEmu::SoftResetMachine()
 
 void FPCEEmu::OnEnterEditMode(void)
 {
-	/*
-	pCore->SaveState(nullptr, EditModeBackupStateSize);
-	free(pEditModeBackupState);
+	//const std::string windowTitle = kAppTitle + " - " + (pCurrentProjectConfig ? pCurrentProjectConfig->Name : std::string()) + " - EDIT MODE ACTIVE - SAVING DISABLED";
+	//SetWindowTitle(windowTitle.c_str());
+
+	// This was a partial implementation of saving state when edit mode was activated.
+	// The problem with it was it didn't save the code analysis state.
+#if 0
+	bool bOk = pCore->SaveState(nullptr, EditModeBackupStateSize);
+	if (!bOk)
+	{
+		// todo: deal with this better
+		LOGERROR("Failed to save state on entering edit mode! Expect issues.");
+		return;
+	}
+
+	if (pEditModeBackupState)
+		free(pEditModeBackupState);
 	pEditModeBackupState = (uint8_t*)malloc(EditModeBackupStateSize);
-	pCore->SaveState(pEditModeBackupState, EditModeBackupStateSize);
-	*/
+	bOk = pCore->SaveState(pEditModeBackupState, EditModeBackupStateSize);
+
+	if (!bOk)
+		LOGERROR("Failed to save state on entering edit mode! Expect issues.");
+#endif
 }
+
 
 void FPCEEmu::OnExitEditMode(void)
 {
-	// This is disabled in EmuBase because I think there is a bug with it (needs confirmation).
-	// Note from Claude: "This restores raw hardware state (CPU regs, RAM, MPR registers) but never resyncs the analyser-side 
-	// bookkeeping (MprBankId/MprBankSet/FBankSet::SlotBankId) afterward — unlike LoadProject, which 
-	// explicitly does ResetBanks(); MapMprBanks(); right after its own raw-state restore (PCEEmu.cpp:2424-2427)
-	// Spectrum and CPC have the identical gap — zx_load_snapshot/cpc_load_snapshot restore raw state without resyncing their 
-	// own bank caches (CurROMBank/CurRAMBank)."
+	// Load the project to restore the emulation and analysis state back to the point before
+	// edit mode was activated.
+	// Capture the config pointer locally first: LoadProject() calls ResetProject(), which nulls
+	// the pCurrentProjectConfig member partway through (before reassigning it on success), so
+	// referencing pCurrentProjectConfig again after a failed call would be a null dereference.
+	if (FProjectConfig* pGameConfig = pCurrentProjectConfig)
+	{
+		if (!LoadProject(pGameConfig, true))
+		{
+			Reset();
+			DisplayErrorMessage("Could not reload project '%s' after exiting Edit Mode", pGameConfig->Name.c_str());
+		}
+	}
 
+#if 0
+	// This was my failed attempt to restore the emulation state.
+	// It didn't work because we don't restore the analysis state to where it was
+	// before we entered edit mode. This means we can end up with a stale analysis state
+	// that refers to execution that happened when we were in edit mode.
+	// This means the debugger display will be stale (callstack, frame trace, etc) but also
+	// CurrentFrameNo / ExecutionCounter don't get rewound. Also affected 
+	// LastFrameRead/LastRead/LastFrameWrite on each FDataInfo/FCodeInfo. Those numbers will
+	// be ahead of where the player resumed.
+	// More importantly, any function labels that were executed when edit mode was active will
+	// persist forever. This could have serious consequences if you end up executing code that wasn't
+	// meant to be executed. Same issue for data labels.
+	// This logic was replaced by a simpler: 
+	//  Enter edit mode -> SaveProject
+	//  Exit edit mode -> LoadProject
+	assert(pEditModeBackupState);
 	if (pEditModeBackupState != nullptr)
 	{
-		pCore->LoadState(pEditModeBackupState, EditModeBackupStateSize);
-		
-		// potential fix:
-		// Resync MprBankId/MprBankSet/FBankSet::SlotBankId to the just-restored
-		// MPR hardware registers — same pairing LoadProject uses after LoadMachineState().
-		/*ResetBanks();
-		MapMprBanks();*/
+		bool bOk = pCore->LoadState(pEditModeBackupState, EditModeBackupStateSize);
+		if (!bOk)
+		{
+			// todo: deal with this better
+			LOGERROR("Failed to restore state after exiting edit mode! Expect issues.");
+		}
 	}
+#endif
 }
-
 
 void FPCEEmu::DrawEmulatorUI()
 {

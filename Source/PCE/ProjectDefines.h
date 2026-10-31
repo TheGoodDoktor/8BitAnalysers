@@ -1,3 +1,3 @@
 #pragma once
 
-#define CDROM_SUPPORT 1
+#define CDROM_SUPPORT 0

@@ -150,3 +150,7 @@ DONE
 - look into "FAddressRef::SetVal on unmapped bank 1 HWPAGE_2. ref will be invalid." type errors. happens on RondoOfBlood in CreateCodeInfoFromJson on "OperandAddress"
 - get graphics viewer displaying sprites
 - remove dupe banks from graphics viewer dropdown. also unused banks
+- remove dupe banks from graphics viewer dropdown. also unused banks
+- OnEnterEditMode() get working
+- edit mode doesnt restore properly. emulation bugs afer restoring
+- remove load slot and save slot (make debug only?)
