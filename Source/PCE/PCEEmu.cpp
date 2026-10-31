@@ -3,6 +3,8 @@
 #include "PCEEmu.h"
 
 #include <chrono>
+#include <algorithm>
+#include <cmath>
 
 #include "AsmExportValidator.h"
 #include "Constants.h"
@@ -49,6 +51,7 @@
 #include "PCEGameConfig.h"
 
 #include "optick/optick.h"
+#include <sokol_audio.h>
 
 bool InitPCEAsmExporters();
 
@@ -2367,6 +2370,52 @@ void FPCEEmu::Tick()
 
 	UpdateDebugStats();
 
+#if REALTIME_FRAME_PACING
+	// Run whole PCE frames to keep pace with real time, independent of the host refresh rate.
+	static constexpr double kPCEFrameTime = (double)(HUC6260_LINE_LENGTH * HUC6260_LINES) / (double)GG_MASTER_CLOCK_RATE;
+
+	FDebugger& debugger = CodeAnalysis.Debugger;
+	if (debugger.IsStopped() == false)
+	{
+		FrameTimeAccumulator += (double)ImGui::GetIO().DeltaTime * EmuSpeedScale;
+
+		// Don't try to catch up if the host can't keep pace - running extra frames makes the next tick longer still,
+		// so a slow host runs at one frame per tick.
+		const int maxFrames = std::max(1, (int)std::ceil(EmuSpeedScale));
+		const int framesToRun = std::min((int)(FrameTimeAccumulator / kPCEFrameTime), maxFrames);
+		FrameTimeAccumulator -= framesToRun * kPCEFrameTime;
+
+		// Carry over at most one frame of owed time to smooth out host frame time jitter, drop the rest.
+		FrameTimeAccumulator = std::min(FrameTimeAccumulator, kPCEFrameTime);
+
+		for (int i = 0; i < framesToRun && debugger.IsStopped() == false; i++)
+		{
+			if (pDebugStats)
+				pDebugStats->NumBankSwitchesThisFrame = 0;
+
+			CodeAnalysis.OnFrameStart();
+			StoreRegisters_6502(CodeAnalysis);
+			//CodeAnalysis.OnMachineFrameStart();
+
+			int audioSampleCount = 0;
+			pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
+
+			// Only output audio at normal speed - fast forward would just overflow the audio buffer
+			if (pGlobalConfig->bEnableAudio && EmuSpeedScale <= 1.0f)
+				PushAudio(pAudioBuf, audioSampleCount);
+
+			if (pAsmExportValidator && GetPCEGlobalConfig()->bUseAsmExportValidator)
+				pAsmExportValidator->Tick();
+
+			CodeAnalysis.OnFrameEnd();
+			//CodeAnalysis.OnMachineFrameStart();
+		}
+	}
+	else
+	{
+		FrameTimeAccumulator = 0.0;	// don't owe time for while we were paused
+	}
+#else
 	for (int i = 0; i < EmuFramesToRun; i++)
 	{
 		FDebugger& debugger = CodeAnalysis.Debugger;
@@ -2382,6 +2431,9 @@ void FPCEEmu::Tick()
 			int audioSampleCount = 0;
 			pCore->RunToVBlank(pFrameBuffer, pAudioBuf, &audioSampleCount);
 
+			if (pGlobalConfig->bEnableAudio)
+				PushAudio(pAudioBuf, audioSampleCount);
+
 			if (pAsmExportValidator && GetPCEGlobalConfig()->bUseAsmExportValidator)
 				pAsmExportValidator->Tick();
 
@@ -2396,6 +2448,39 @@ void FPCEEmu::Tick()
 
 	// Draw UI
 	DrawDockingView();
+}
+
+// Geargrafx produces a frame's worth of interleaved stereo samples at GG_AUDIO_SAMPLE_RATE.
+// Sokol audio is set up as mono at the device's sample rate, so downmix and resample with linear interpolation.
+// If the emulator runs ahead of the audio device sokol drops the excess samples.
+void FPCEEmu::PushAudio(const int16_t* pSamples, int sampleCount)
+{
+	const int numFrames = sampleCount / 2;
+	if (numFrames <= 0)
+		return;
+
+	auto getMono = [pSamples](int frame) { return ((float)pSamples[frame * 2] + (float)pSamples[frame * 2 + 1]) * (0.5f / 32768.0f); };
+
+	const float step = (float)GG_AUDIO_SAMPLE_RATE / (float)saudio_sample_rate();
+	int outCount = 0;
+
+	// Position 0 is the last sample of the previous frame, position N is sample N-1 of this frame
+	while (AudioResamplePos < (float)numFrames && outCount < kMaxAudioOutFrames)
+	{
+		const int i = (int)AudioResamplePos;
+		const float t = AudioResamplePos - (float)i;
+		const float s0 = i == 0 ? AudioLastSample : getMono(i - 1);
+		const float s1 = getMono(i);
+		AudioOutBuf[outCount++] = s0 + (s1 - s0) * t;
+		AudioResamplePos += step;
+	}
+
+	AudioResamplePos -= (float)numFrames;
+	if (AudioResamplePos < 0.0f)
+		AudioResamplePos = 0.0f;
+	AudioLastSample = getMono(numFrames - 1);
+
+	saudio_push(AudioOutBuf, outCount);
 }
 
 void FPCEEmu::ResetProject()
