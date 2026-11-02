@@ -11,6 +11,10 @@
 #define ASSEMBLE_AFTER_ASM_EXPORT 0
 #endif
 
+// 1 = Run PCE frames to keep pace with real time, independent of the host refresh rate.
+// 0 = Run a fixed number of PCE frames per host frame. Will run too fast on >60hz displays
+#define REALTIME_FRAME_PACING 1
+
 // Geargrafx fwd declares
 class GeargrafxCore;
 class Media;
@@ -54,6 +58,8 @@ public:
 	void	Reset() override;
 	void	OnEnterEditMode(void) override;
 	void	OnExitEditMode(void) override;
+	bool	EditModeDiscardsChangesOnExit(void) const override { return true; }
+	void	RequestQuit(void) override;
 	bool	LoadEmulatorFile(const FEmulatorFile* pSnapshot) override;
 	bool	NewProjectFromEmulatorFile(const FEmulatorFile& snapshot) override;
 	bool	LoadProject(FProjectConfig* pGameConfig, bool bLoadGame) override;
@@ -166,7 +172,12 @@ public:
 
 	FEmuDebugStats* pDebugStats = nullptr;
 
+#if REALTIME_FRAME_PACING
+	float EmuSpeedScale = 1.0f;		// 1.0 = real time, >1 = fast forward
+	double FrameTimeAccumulator = 0.0;	// real time owed to the emulator, in seconds
+#else
 	int EmuFramesToRun = 1;
+#endif
 
 	static const char* kPCERomGameListName;
 	static const char* kCDRomGameListName;
@@ -203,12 +214,20 @@ protected:
 	void AddLabels();
 	void AddInterruptVectorFunctionLabels(int16_t bankId);
 
+	void PushAudio(const int16_t* pSamples, int sampleCount);
+
 protected:
 	GeargrafxCore* pCore = nullptr;
 	Media* pMedia = nullptr;
 	Memory* pMemory = nullptr;
 	uint8_t* pFrameBuffer = nullptr;
 	int16_t* pAudioBuf = nullptr;
+
+	// Audio output resampling state
+	static constexpr int kMaxAudioOutFrames = 4096;
+	float AudioOutBuf[kMaxAudioOutFrames];
+	float AudioResamplePos = 0.0f;	// position within the current frame's samples
+	float AudioLastSample = 0.0f;	// last mono sample from the previous frame, for interpolation
 	int* pVPos = nullptr; // HuC6270 vertical position, cached for speed.
 	HuC6280_State* p6280State = nullptr;
 	HuC6270_State* p6270State = nullptr;
@@ -256,6 +275,6 @@ protected:
 
 	FAsmExportValidator* pAsmExportValidator = nullptr;
 
-	uint8_t* pEditModeBackupState = nullptr;
-	size_t EditModeBackupStateSize = 0;
+	//uint8_t* pEditModeBackupState = nullptr;
+	//size_t EditModeBackupStateSize = 0;
 };

@@ -219,6 +219,8 @@ void	FOverviewViewer::DrawLegend()
 	ImGui::SameLine();
 	ImGui::Text("Bitmap Data");
 
+	/*
+	// sam. Disabled these as they all don't apply for PCE (yet). 
 	ImGui::ColorButton("Char Map Data", ImGui::ColorConvertU32ToFloat4(kCharMapDataCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
 	ImGui::Text("Char Map Data");
@@ -230,6 +232,7 @@ void	FOverviewViewer::DrawLegend()
 	ImGui::ColorButton("Colour Attributes", ImGui::ColorConvertU32ToFloat4(kColAttribDataCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
 	ImGui::Text("Colour Attributes");
+	*/
 
 	ImGui::ColorButton("Unknown Data", ImGui::ColorConvertU32ToFloat4(kUnknownDataCol), ImGuiColorEditFlags_NoTooltip);
 	ImGui::SameLine();
@@ -336,7 +339,14 @@ void	FOverviewViewer::DrawPhysicalMemoryOverview()
 	}
 
 	ImGui::Checkbox("Highlight Current Location", &bShowCurrentLocation);
-	ImGui::Checkbox("Show Bank Names", &bShowBankNames);
+	//ImGui::Checkbox("Show Bank Names", &bShowBankNames);
+	
+	// sam. 
+	if (ImGui::Button("Reset Activity"))
+	{
+		ResetReferenceInfo(state, true, true);
+		LastBuiltFrameNo = -1;	// force a rebuild of the map next frame
+	}
 
 	if (bShowCurrentLocation)
 	{

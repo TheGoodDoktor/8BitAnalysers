@@ -237,7 +237,7 @@ public:
 	void	DrawWatches(void);
 	void	DrawBreakpoints(void);
 	void	DrawEvents(void);
-	void	DrawUI(void);
+	void	DrawRegisters(void); // sam
 
 	void FixupAddresRefs(void);
 private:

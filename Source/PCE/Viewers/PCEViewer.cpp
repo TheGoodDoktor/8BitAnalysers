@@ -78,7 +78,14 @@ void FPCEViewer::DrawUI()
 	ImGui::Text("Avg %.1f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 #endif
 
+#if REALTIME_FRAME_PACING
+	if (ImGui::Button("Reset"))
+		pPCEEmu->EmuSpeedScale = 1.0f;
+	ImGui::SameLine();
+	ImGui::SliderFloat("Emu Speed", &pPCEEmu->EmuSpeedScale, 0.1f, 8.0f, "%.2fx");
+#else
 	ImGui::InputInt("Fast Fwd Speed", &pPCEEmu->EmuFramesToRun);
+#endif
 
 	bWindowFocused = ImGui::IsWindowHovered() || ImGui::IsWindowFocused();
 }

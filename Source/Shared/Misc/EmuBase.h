@@ -55,6 +55,11 @@ public:
 
 	virtual void	OnEnterEditMode(void) {}
 	virtual void	OnExitEditMode(void) {}
+	virtual bool	EditModeDiscardsChangesOnExit(void) const { return false; } // sam
+	void			ActivateEditMode(void); // sam
+
+	// sam. Closes the app window. Same shutdown/save behaviour as the user clicking the OS window-close button
+	virtual void	RequestQuit(void) {}
 
 	// sam. This should probably go somewhere else
 	virtual int16_t		GetCanonicalBankId(int16_t bankId) const { return bankId; }
@@ -70,6 +75,7 @@ public:
 	virtual void	DrawEmulatorUI() = 0;
 
 	void			AddViewer(FViewerBase* pViewr);
+	const std::vector<FViewerBase*>&	GetViewers() const { return Viewers; }
 
 	void			SetXHighlight(int x) { HighlightXPos = x; }
 	void			SetYHighlight(int y) { HighlightYPos = y; }
@@ -131,6 +137,7 @@ protected:
 	void			DrawExportAsmModalPopup(void);
 	void			DrawReplaceGameModalPopup(void);
 	void			DrawErrorMessageModalPopup(void);
+	void			DrawConfirmEditModePopup(void); // sam
 
 	FGlobalConfig*		pGlobalConfig = nullptr;
 	FProjectConfig*		pCurrentProjectConfig = nullptr;
@@ -181,6 +188,10 @@ protected:
 	bool		bExportAsm = false;
 	bool		bExportBinary = false;
 	bool 		bEditGlobalConfig = false;
+	bool		bConfirmEditModePopup = false; // sam
+
+	// sam. Set by "Quit without Saving" 
+	bool		bSkipSaveOnShutdown = false;
 
 	FEmulatorFile EmulatorFileToLoad;	// for 'are you sure?' popup
 

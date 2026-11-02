@@ -30,6 +30,8 @@ void FGlobalConfig::ReadFromJson(const json& jsonConfigFile)
 		bShowScanLineIndicator = jsonConfigFile["ShowScanlineIndicator"];
 	if (jsonConfigFile.contains("ShowOpcodeValues"))
 		bShowOpcodeValues = jsonConfigFile["ShowOpcodeValues"];
+	if (jsonConfigFile.contains("SkipEditModeConfirmation")) // sam
+		bSkipEditModeConfirmation = jsonConfigFile["SkipEditModeConfirmation"];
 	LastGame = jsonConfigFile["LastGame"];
 	NumberDisplayMode = (ENumberDisplayMode)jsonConfigFile["NumberMode"];
 	if (jsonConfigFile.contains("BranchLinesDisplayMode"))
@@ -104,6 +106,7 @@ void FGlobalConfig::WriteToJson(json& jsonConfigFile) const
 	jsonConfigFile["EnableAudio"] = bEnableAudio;
 	jsonConfigFile["ShowScanlineIndicator"] = bShowScanLineIndicator;
 	jsonConfigFile["ShowOpcodeValues"] = bShowOpcodeValues;
+	jsonConfigFile["SkipEditModeConfirmation"] = bSkipEditModeConfirmation; // sam
 	jsonConfigFile["LastGame"] = LastGame;
 	jsonConfigFile["NumberMode"] = (int)NumberDisplayMode;
 	jsonConfigFile["BranchLinesDisplayMode"] = BranchLinesDisplayMode;

@@ -132,6 +132,7 @@ FAddressRef FPCENewGraphicsViewer::GetAddressFromPos(int xp, int yp) const
 	FCodeAnalysisState& state = pPCEEmu->GetCodeAnalysis();
 	const int16_t bankId = (MemorySource == EPCEMemorySource::WRAM) ? WRAMBankId : SelectedBankId;
 	const FCodeAnalysisBank* pBank = state.GetBank(bankId);
+
 	if (pBank == nullptr || pGraphicView == nullptr)
 		return FAddressRef::Invalid();
 
@@ -214,6 +215,7 @@ void FPCENewGraphicsViewer::PopulateBankList(const FCodeAnalysisState& state)
 	{
 		FBankSet* pBankSet = pPCEEmu->GetBankSetPtr(i);
 		const int16_t bankId = pBankSet->GetBankId();
+
 		if (std::find(ComboBankIds.begin(), ComboBankIds.end(), bankId) == ComboBankIds.end())
 		{
 			if (state.GetBank(bankId) != nullptr)
@@ -389,14 +391,15 @@ void FPCENewGraphicsViewer::DrawUI(void)
 		bGraphicViewDirty = false;
 	}
 
-	ImGui::InputInt("Scale", &GraphicViewScale, 1, 1);
-	GraphicViewScale = MAX(1, GraphicViewScale);
+	FGlobalConfig* pConfig = state.pGlobalConfig;
+	ImGui::InputInt("Scale", &pConfig->GfxViewerScale, 1, 1);
+	pConfig->GfxViewerScale = MAX(1, pConfig->GfxViewerScale);
 
 	DrawPaletteListBox();
 
 	if (pGraphicView != nullptr)
 	{
-		const float scale = ImGui_GetScaling() * (float)GraphicViewScale;
+		const float scale = ImGui_GetScaling() * (float)pConfig->GfxViewerScale;
 		const ImVec2 imageSize((float)pGraphicView->GetWidth() * scale, (float)pGraphicView->GetHeight() * scale);
 		const ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImGui::Image((void*)pGraphicView->GetTexture(), imageSize);
@@ -441,7 +444,7 @@ void FPCENewGraphicsViewer::DrawPaletteListBox()
 		bGraphicViewDirty = true;
 
 	ImGui::BeginDisabled(bGreyscale);
-	if (ImGui::BeginListBox("Palette", ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 8)))
+	if (ImGui::BeginListBox("Palette", ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 4)))
 	{
 		const int numPalettes = GetNoPaletteEntries();
 		for (int p = 0; p < numPalettes; p++)
