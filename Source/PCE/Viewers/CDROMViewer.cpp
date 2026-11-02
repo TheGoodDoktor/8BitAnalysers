@@ -11,6 +11,9 @@
 //#include <imgui_internal.h>
 //#include "optick/optick.h"
 #include "../PCEEmu.h"
+#include "Misc/GameConfig.h"
+#include "Misc/GlobalConfig.h"
+#include "Debug/DebugLog.h"
 #include "geargrafx_core.h"
 #include "cdrom_media.h"
 #include "cdrom_image.h"
@@ -213,14 +216,40 @@ void FCDROMViewer::DrawTransferLogTab()
 {
 	FCodeAnalysisState& state           = pPCEEmu->GetCodeAnalysis();
 	FCodeAnalysisViewState& viewState   = state.GetFocussedViewState();
-	const FCDROMAnalyser* pCDROMAnalyser = pPCEEmu->GetCDROMAnalyser();
+	FCDROMAnalyser* pCDROMAnalyser = pPCEEmu->GetCDROMAnalyser();
 	if (pCDROMAnalyser == nullptr)
 	{
 		ImGui::TextDisabled("No CDROM analyser.");
 		return;
 	}
 
-	const std::vector<TCDTransferList>& trackTransfers = pCDROMAnalyser->GetTrackTransfers();
+	const FProjectConfig* pProjectConfig = pPCEEmu->GetProjectConfig();
+	ImGui::BeginDisabled(pProjectConfig == nullptr);
+	if (ImGui::Button("Save CSV"))
+	{
+		const std::string projectRoot = pPCEEmu->GetGlobalConfig()->WorkspaceRoot + pProjectConfig->Name;
+
+		const std::string transferLogFName = projectRoot + "/CDTransferLog.csv";
+		if (pCDROMAnalyser->SaveTransferLogCSV(transferLogFName.c_str()))
+			LOGINFO("Saved %d CD transfers to '%s'", (int)pCDROMAnalyser->GetTransferLog().size(), transferLogFName.c_str());
+		else
+			LOGERROR("Failed to save CD transfer log to '%s'", transferLogFName.c_str());
+
+		const std::string bankPiecesFName = projectRoot + "/CDBankPieces.csv";
+		if (pCDROMAnalyser->SaveBankPiecesCSV(bankPiecesFName.c_str()))
+			LOGINFO("Saved CD bank pieces to '%s'", bankPiecesFName.c_str());
+		else
+			LOGERROR("Failed to save CD bank pieces to '%s'", bankPiecesFName.c_str());
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+	ImGui::Text("%d transfers", (int)pCDROMAnalyser->GetTransferLog().size());
+
+	bool bTrackUsage = pCDROMAnalyser->IsUsageTrackingEnabled();
+	if (ImGui::Checkbox("Track piece usage (slow)", &bTrackUsage))
+		pCDROMAnalyser->SetUsageTrackingEnabled(bTrackUsage);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Diagnostic. Records which bytes loaded from the CD get executed or read, and keeps\nthe history of overwritten pieces, for the usage columns in CDBankPieces.csv.\nCosts extra work on every instruction and memory read. Usage only counts from when it's enabled.");
 
 	const ImGuiTableFlags tableFlags =
 		ImGuiTableFlags_SizingFixedFit |
@@ -231,37 +260,44 @@ void FCDROMViewer::DrawTransferLogTab()
 
 	const float fontWidth = ImGui_GetFontCharWidth();
 
-	if (ImGui::BeginTable("##cdtransfers", 4, tableFlags))
+	if (ImGui::BeginTable("##cdtransfers", 5, tableFlags))
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
+		ImGui::TableSetupColumn("Mode",        ImGuiTableColumnFlags_WidthFixed,   fontWidth * 5.0f);
 		ImGui::TableSetupColumn("Track",       ImGuiTableColumnFlags_WidthFixed,   fontWidth * 6.0f);
 		ImGui::TableSetupColumn("LBA Offset",  ImGuiTableColumnFlags_WidthFixed,   fontWidth * 10.0f);
 		ImGui::TableSetupColumn("Size",        ImGuiTableColumnFlags_WidthFixed,   fontWidth * 8.0f);
 		ImGui::TableSetupColumn("Destination", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableHeadersRow();
 
-		for (const TCDTransferList& transferList : trackTransfers)
+		for (const FCDROMTransfer& transfer : pCDROMAnalyser->GetTransferLog())
 		{
-			for (const FCDROMTransfer& transfer : transferList)
-			{
-				ImGui::TableNextRow();
+			ImGui::TableNextRow();
 
-				ImGui::TableSetColumnIndex(0);
-				ImGui::Text("%d", transfer.TrackIndex + 1);
+			ImGui::TableSetColumnIndex(0);
+			if (transfer.Args.bDecoded)
+				ImGui::Text("%d", transfer.Args.Mode);
+			else
+				ImGui::TextDisabled("%d", transfer.Args.Mode);
 
-				ImGui::TableSetColumnIndex(1);
-				const char* pText = NumStr24Bit(transfer.LBAOffset, GetNumberDisplayMode());
-				ImGui::Text("%s", pText);
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("%d", transfer.TrackIndex + 1);
 
-				ImGui::TableSetColumnIndex(2);
-				ImGui::Text("%u", transfer.SizeInBytes);
+			ImGui::TableSetColumnIndex(2);
+			const char* pText = NumStr24Bit(transfer.Args.LBAOffset, GetNumberDisplayMode());
+			ImGui::Text("%s", pText);
 
-				ImGui::TableSetColumnIndex(3);
-				if (transfer.DestAddr.IsValid())
-					DrawAddressLabel(state, viewState, transfer.DestAddr);
-				else
-					ImGui::TextDisabled("--");
-			}
+			ImGui::TableSetColumnIndex(3);
+			if (transfer.Args.bDecoded)
+				ImGui::Text("%u", transfer.Args.TransferSizeBytes);
+			else
+				ImGui::TextDisabled("--");
+
+			ImGui::TableSetColumnIndex(4);
+			if (transfer.DestAddr.IsValid())
+				DrawAddressLabel(state, viewState, transfer.DestAddr);
+			else
+				ImGui::TextDisabled("--");
 		}
 
 		ImGui::EndTable();

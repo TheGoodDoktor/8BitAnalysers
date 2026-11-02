@@ -238,6 +238,12 @@ void FPCEEmu::RegisterDataRead(uint16_t pc, uint16_t dataAddr)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
 
+#if CDROM_SUPPORT
+	// Track which bytes loaded from the CD get read as data.
+	if (pCDROMAnalyser)
+		pCDROMAnalyser->OnMemoryRead(pc, dataAddr);
+#endif
+
 	// todo: fix order of execution issue here?
 	// if this is the first time we've executed this location, then the memory won't be set as code.
 	// this means this check will return a false positive.
@@ -275,6 +281,12 @@ void FPCEEmu::RegisterDataRead(uint16_t pc, uint16_t dataAddr)
 void FPCEEmu::RegisterDataWrite(uint16_t pc, uint16_t dataAddr, uint8_t value)
 {
 	FCodeAnalysisState& state = GetCodeAnalysis();
+
+#if CDROM_SUPPORT
+	// Capture the bytes a BIOS CD read writes while it's in progress.
+	if (pCDROMAnalyser)
+		pCDROMAnalyser->OnMemoryWritten(pc, dataAddr);
+#endif
 
 	const FAddressRef pcAddr = state.GetCanonicalAddressRef(pc);
 	FDataInfo* pDataInfo = state.GetWriteDataInfoForAddress(dataAddr);
@@ -557,11 +569,10 @@ void FPCEEmu::OnInstructionFinished(uint16_t pc)
 		{
 			if (pcAddrRef.GetAddress() == 0xEC05/*0xE009*/)
 			{
+				// Record every read, including modes that aren't decoded yet.
 				FBiosCDReadArgs cdReadArgs;
-				if (GetBiosCDReadArgs(this, cdReadArgs))
-				{
-					pCDROMAnalyser->RegisterCDRead(cdReadArgs);
-				}
+				GetBiosCDReadArgs(this, cdReadArgs);
+				pCDROMAnalyser->RegisterCDRead(cdReadArgs);
 			}
 		}
 	}
@@ -569,6 +580,12 @@ void FPCEEmu::OnInstructionFinished(uint16_t pc)
 
 	// oldpc is unused on HuC6280 (RegisterCodeExecutedHuC6280 only reads opcode at pc).
 	RegisterCodeExecuted(state, pc, /* oldpc */ 0);
+
+#if CDROM_SUPPORT
+	// pc is the instruction that just ran, the next pc is the instruction that will run next.
+	if (pCDROMAnalyser)
+		pCDROMAnalyser->OnInstructionFinished(pc, p6280State->PC->GetValue());
+#endif
 
 	// Advance Debugger.PC to the next instruction _before_ the breakpoint check so:
 	//  - the exec breakpoint check below fires against the instruction about to run, not the one that just ran
@@ -1728,15 +1745,16 @@ bool FPCEEmu::LoadProject(FProjectConfig* pGameConfig, bool bLoadGameData /* =  
 			ImportAnalysisJson(CodeAnalysis, GetBundlePath(kBiosInfoJsonFile));
 #endif
 		CodeAnalysis.Config.RomType = ESystemRom::Bios;
-
-#if CDROM_SUPPORT
-		pCDROMAnalyser->Reset();
-#endif
 	}
 	else
 	{
 		CodeAnalysis.Config.RomType = ESystemRom::None;
 	}
+
+#if CDROM_SUPPORT
+	// Called for HuCard projects too so transfers from a previously loaded CD project get cleared.
+	pCDROMAnalyser->Reset();
+#endif
 
 	//if (bLoadGameData == false)
 		AddLabels();

@@ -119,6 +119,7 @@ public:
 
 	bool IsCDROM() const;
 	const FCDROMAnalyser* GetCDROMAnalyser() const { return pCDROMAnalyser; }
+	FCDROMAnalyser* GetCDROMAnalyser() { return pCDROMAnalyser; }
 
 	// Callbacks from geargrafx
 	void OnInstructionStarted(uint16_t pc, uint8_t opcode);
