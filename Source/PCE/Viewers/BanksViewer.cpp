@@ -16,6 +16,7 @@ enum class EBankTableColumn : int
 	Address,
 	Content,
 	MprSlots,
+	Description,
 };
 
 enum class EBankContent : int
@@ -96,6 +97,10 @@ static void SortBankTable(const ImGuiTableSortSpecs* sortSpecs,	const std::vecto
 			case EBankTableColumn::EverMapped:
 				delta = int(A->bEverBeenMapped) - int(B->bEverBeenMapped);
 				break;
+
+			case EBankTableColumn::Description:
+				delta = A->Description.compare(B->Description);
+				break;
 			}
 
 			if (spec.SortDirection == ImGuiSortDirection_Descending)
@@ -140,7 +145,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& banks, c
 	// test
 	//flags |= ImGuiTableFlags_NoSavedSettings;
 
-	if (ImGui::BeginTable("MemoryBanksTable", 6, flags))
+	if (ImGui::BeginTable("MemoryBanksTable", 7, flags))
 	{
 		const float squareSize = ImGui::GetTextLineHeight() - 2.0f;
 
@@ -154,6 +159,7 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& banks, c
 		ImGui::TableSetupColumn("Addr", defaultFlags, fontWidth * 8.f,	(int)EBankTableColumn::Address);
 		ImGui::TableSetupColumn("Content", defaultFlags, fontWidth * 12.5f, (int)EBankTableColumn::Content);
 		ImGui::TableSetupColumn("MPR Slots", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, squareSize * 9.f, (int)EBankTableColumn::MprSlots);
+		ImGui::TableSetupColumn("Description", ImGuiTableColumnFlags_WidthStretch, 0.0f, (int)EBankTableColumn::Description);
 		ImGui::TableHeadersRow();
 
 		// Handle sorting
@@ -291,6 +297,10 @@ void FBanksViewer::DrawBankTable(const std::vector<FCodeAnalysisBank*>& banks, c
 
 				ImGui::Dummy(ImVec2(8.0f * squareSize + 7.0f * gap, squareSize));
 			}
+
+			// Description
+			ImGui::TableSetColumnIndex(6);
+			ImGui::TextColored(colour, "%s", pBank->Description.c_str());
 		}
 
 		ImGui::EndTable();
