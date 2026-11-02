@@ -8,7 +8,8 @@ TODO FOR FIRST RELEASE
 - remove validatorpath from global config in release builds
 - remove gamedb from globalconfig (think I did it already)
 - rename snapshotfolder in globalconfig?
-
+- get audio working
+	
 TODO
 - operand dropdowns dont work
 - get Word data item set to display as Pointer to work when outputting assembly
@@ -57,6 +58,7 @@ TODO
 - FBankSet::ClaimSpecificBank can fail to find bank. happened with rabio lepus.
 - Add Ctrl + up and down to keyboard shortcut help
 - add all cd banks to graphics viewer
+- show how many times a bank has had it's contents loaded from disc? in banks viewer? or cd rom viewer?
 
 BUGS
 - figure out why some functions show up as data. see hero tonma data_wram_3bf2
